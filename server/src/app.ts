@@ -96,7 +96,7 @@ app.use((_req: Request, res: Response) => {
 app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(Number(PORT), '0.0.0.0', () => {
   logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
   logger.info(`📚 API: http://localhost:${PORT}/api`);
   logger.info(`❤️  Health: http://localhost:${PORT}/health`);

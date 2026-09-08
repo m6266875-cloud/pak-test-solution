@@ -5,22 +5,22 @@ import { adminApi } from '../../api/admin';
 import { papersApi } from '../../api/papers';
 import { DashboardStats, PaperListItem } from '../../types';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
 import {
   FilePlus, Files, Database, TrendingUp,
   BookOpen, Clock, Award, Users, ArrowRight, Download,
+  BarChart3, Zap, Calendar,
 } from 'lucide-react';
 import clsx from 'clsx';
 
-const StatusBadge = ({ status }: { status: string }) => (
-  <span className={clsx(
-    'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-    status === 'final'    && 'bg-green-100 text-green-700',
-    status === 'draft'    && 'bg-gray-100 text-gray-600',
-    status === 'archived' && 'bg-amber-100 text-amber-700',
-  )}>
-    {status.charAt(0).toUpperCase() + status.slice(1)}
-  </span>
-);
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: (i: number = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.4, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }
+  }),
+};
 
 export default function DashboardPage() {
   const { user } = useAppSelector((s) => s.auth);
@@ -52,139 +52,158 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">{greeting}, {user?.name?.split(' ')[0]}! 👋</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {user?.schoolName || 'Pak Test Solution'} · {new Date().toLocaleDateString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
-        <Link to="/app/papers/generate" className="btn-primary self-start sm:self-auto">
-          <FilePlus className="w-4 h-4" />
-          Generate New Paper
-        </Link>
-      </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+      {/* ═══ HEADER ═══ */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+        <PageHeader
+          title={`${greeting}, ${user?.name?.split(' ')[0]} 👋`}
+          description={user?.schoolName || 'Pak Test Software'}
+          action={
+            <Link to="/app/papers/generate" className="btn-primary">
+              <FilePlus className="w-4 h-4" /> Generate Paper
+            </Link>
+          }
+        />
+      </motion.div>
 
-      {/* Stats Grid */}
+      {/* ═══ STATS GRID ═══ */}
       {isAdmin && stats ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={Files} label="Total Papers" value={stats.totalPapers} sub="All time" color="bg-blue-50 text-blue-600" />
-          <StatCard icon={Database} label="Questions" value={stats.totalQuestions.toLocaleString()} sub="In question bank" color="bg-purple-50 text-purple-600" />
-          <StatCard icon={Users} label="Active Users" value={stats.totalUsers} sub="Teachers & admins" color="bg-green-50 text-green-600" />
-          <StatCard icon={TrendingUp} label="This Month" value={myPapers.length} sub="Papers generated" color="bg-amber-50 text-amber-600" />
+          {[
+            { icon: Files, label: 'Total Papers', value: stats.totalPapers, sub: 'All time', color: 'from-blue-500 to-blue-600' },
+            { icon: Database, label: 'Questions', value: stats.totalQuestions.toLocaleString(), sub: 'In bank', color: 'from-purple-500 to-purple-600' },
+            { icon: Users, label: 'Active Users', value: stats.totalUsers, sub: 'Teachers & admins', color: 'from-emerald-500 to-emerald-600' },
+            { icon: TrendingUp, label: 'This Month', value: myPapers.length, sub: 'Papers generated', color: 'from-amber-500 to-amber-600' },
+          ].map((stat, i) => (
+            <motion.div key={stat.label} custom={i} variants={fadeUp} initial="hidden" animate="show" className="card p-5">
+              <div className={clsx('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 text-white shadow-sm', stat.color)}>
+                <stat.icon className="w-5 h-5" />
+              </div>
+              <div className="text-2xl font-bold text-surface-900 font-display">{stat.value}</div>
+              <div className="text-sm font-medium text-surface-700">{stat.label}</div>
+              <div className="text-xs text-surface-400 mt-0.5">{stat.sub}</div>
+            </motion.div>
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard icon={Files} label="My Papers" value={myPapers.length} sub="Generated" color="bg-blue-50 text-blue-600" />
-          <StatCard icon={Award} label="Finals" value={myPapers.filter(p => p.status === 'final').length} sub="Ready to print" color="bg-green-50 text-green-600" />
-          <StatCard icon={Clock} label="Drafts" value={myPapers.filter(p => p.status === 'draft').length} sub="In progress" color="bg-amber-50 text-amber-600" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { icon: Files, label: 'My Papers', value: myPapers.length, sub: 'Generated', color: 'from-brand-500 to-brand-600' },
+            { icon: Award, label: 'Final', value: myPapers.filter(p => p.status === 'final').length, sub: 'Ready to print', color: 'from-emerald-500 to-emerald-600' },
+            { icon: Clock, label: 'Drafts', value: myPapers.filter(p => p.status === 'draft').length, sub: 'In progress', color: 'from-amber-500 to-amber-600' },
+            { icon: Calendar, label: 'This Month', value: myPapers.filter(p => new Date(p.createdAt).getMonth() === new Date().getMonth()).length, sub: 'Papers created', color: 'from-purple-500 to-purple-600' },
+          ].map((stat, i) => (
+            <motion.div key={stat.label} custom={i} variants={fadeUp} initial="hidden" animate="show" className="card p-5">
+              <div className={clsx('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 text-white shadow-sm', stat.color)}>
+                <stat.icon className="w-5 h-5" />
+              </div>
+              <div className="text-2xl font-bold text-surface-900 font-display">{stat.value}</div>
+              <div className="text-sm font-medium text-surface-700">{stat.label}</div>
+              <div className="text-xs text-surface-400 mt-0.5">{stat.sub}</div>
+            </motion.div>
+          ))}
         </div>
       )}
 
-      {/* Content Grid */}
+      {/* ═══ MAIN CONTENT GRID ═══ */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Recent Papers */}
-        <div className="lg:col-span-2 card">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Recent Papers</h2>
-            <Link to="/app/papers" className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2 card overflow-hidden">
+          <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
+            <h2 className="font-semibold text-surface-900">Recent Papers</h2>
+            <Link to="/app/papers" className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
               View all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {loading ? (
             <div className="p-8 flex justify-center">
-              <div className="spinner text-primary-500" />
+              <div className="spinner text-brand-500" />
             </div>
           ) : myPapers.length === 0 ? (
-            <div className="p-10 text-center">
-              <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No papers yet</p>
-              <p className="text-sm text-gray-400 mt-1">Generate your first exam paper to get started</p>
-              <Link to="/app/papers/generate" className="btn-primary mt-4 inline-flex">
-                <FilePlus className="w-4 h-4" /> Generate Paper
-              </Link>
-            </div>
+            <EmptyState
+              icon={BookOpen}
+              title="No papers yet"
+              description="You haven't generated any papers. Create your first paper in less than 2 minutes."
+              action={
+                <Link to="/app/papers/generate" className="btn-primary">
+                  <FilePlus className="w-4 h-4" /> Generate Paper
+                </Link>
+              }
+            />
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-surface-50">
               {myPapers.map((paper) => (
-                <Link key={paper.id} to={`/papers/${paper.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors group">
-                  <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary-100 transition-colors">
-                    <Files className="w-5 h-5 text-primary-600" />
+                <Link key={paper.id} to={`/papers/${paper.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-surface-50 transition-all group">
+                  <div className="w-11 h-11 bg-brand-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-brand-100 transition-colors">
+                    <Files className="w-5 h-5 text-brand-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{paper.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {paper.class.name} · {paper.paperSubjects.map(ps => ps.subject.name).join(', ')} · {paper.totalMarks} marks · {paper.timeLimit} min
+                    <p className="text-sm font-medium text-surface-900 truncate group-hover:text-brand-700 transition-colors">{paper.title}</p>
+                    <p className="text-xs text-surface-500 mt-0.5">
+                      {paper.class.name} · {paper.paperSubjects.map(ps => ps.subject.name).join(', ')} · {paper.totalMarks} marks
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <StatusBadge status={paper.status} />
-                    <span className="text-xs text-gray-400">{format(new Date(paper.createdAt), 'dd MMM')}</span>
+                    <span className="text-xs text-surface-400 hidden sm:block">{format(new Date(paper.createdAt), 'dd MMM')}</span>
                   </div>
                 </Link>
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Quick Actions */}
-        <div className="space-y-4">
+        {/* Sidebar */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-5">
+          {/* Quick Actions */}
           <div className="card p-5">
-            <h2 className="font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <h3 className="font-semibold text-surface-900 mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <QuickAction to="/app/papers/generate" icon={FilePlus} label="Generate Paper" desc="Create a new exam paper" primary />
-              <QuickAction to="/app/questions" icon={Database} label="Question Bank" desc="Browse & manage questions" />
-              <QuickAction to="/app/papers" icon={Files} label="My Papers" desc="View all your papers" />
-              {isAdmin && <QuickAction to="/app/admin/users" icon={Users} label="Manage Users" desc="Add teachers & admins" />}
+              <Link to="/app/papers/generate" className="flex items-center gap-3 p-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-all group">
+                <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Zap className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">Generate Paper</div>
+                  <div className="text-xs text-brand-200">Create a new exam paper</div>
+                </div>
+              </Link>
+              <QuickAction to="/app/questions" icon={Database} label="Question Bank" desc="Browse questions" />
+              <QuickAction to="/app/papers" icon={Files} label="My Papers" desc="View all papers" />
+              {isAdmin && <QuickAction to="/app/admin/users" icon={Users} label="Manage Users" desc="Teachers & admins" />}
             </div>
           </div>
 
-          {/* Tips card */}
-          <div className="card p-5 bg-primary-50 border-primary-100">
+          {/* Pro tip */}
+          <div className="card p-5 bg-gradient-to-br from-brand-50 to-purple-50 border-brand-100">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                <BookOpen className="w-4 h-4 text-white" />
+              <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-4.5 h-4.5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-primary-900 mb-1">Pro Tip</h3>
-                <p className="text-xs text-primary-700 leading-relaxed">
-                  Enable randomization when generating papers to ensure each student receives a unique question order — great for exam integrity.
+                <h4 className="text-sm font-semibold text-brand-900 mb-1">Pro Tip</h4>
+                <p className="text-xs text-brand-700 leading-relaxed">
+                  Enable randomization when generating papers to ensure each student gets a unique question order — ideal for exam integrity.
                 </p>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value, sub, color }: any) {
+function QuickAction({ to, icon: Icon, label, desc }: { to: string; icon: any; label: string; desc: string }) {
   return (
-    <div className="stat-card">
-      <div className={clsx('w-10 h-10 rounded-lg flex items-center justify-center mb-3', color)}>
-        <Icon className="w-5 h-5" />
+    <Link to={to} className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-50 transition-all group">
+      <div className="w-9 h-9 bg-surface-100 rounded-lg flex items-center justify-center group-hover:bg-surface-200 transition-colors">
+        <Icon className="w-4.5 h-4.5 text-surface-600" />
       </div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
-      <div className="text-sm font-medium text-gray-700">{label}</div>
-      <div className="text-xs text-gray-500">{sub}</div>
-    </div>
-  );
-}
-
-function QuickAction({ to, icon: Icon, label, desc, primary }: any) {
-  return (
-    <Link to={to} className={clsx(
-      'flex items-center gap-3 p-3 rounded-lg transition-colors',
-      primary ? 'bg-primary-600 text-white hover:bg-primary-700' : 'hover:bg-gray-50 text-gray-700'
-    )}>
-      <Icon className={clsx('w-4 h-4 flex-shrink-0', primary ? 'text-white' : 'text-gray-500')} />
       <div>
-        <div className={clsx('text-sm font-medium', primary ? 'text-white' : 'text-gray-900')}>{label}</div>
-        <div className={clsx('text-xs', primary ? 'text-primary-200' : 'text-gray-500')}>{desc}</div>
+        <div className="text-sm font-medium text-surface-900">{label}</div>
+        <div className="text-xs text-surface-500">{desc}</div>
       </div>
     </Link>
   );

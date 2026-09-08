@@ -4,8 +4,9 @@ import { papersApi } from '../../api/papers';
 import { PaperListItem, PaperStatus } from '../../types';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { PageHeader, EmptyState, StatusBadge } from '../../components/ui';
 import {
-  FilePlus, Search, Filter, Eye, Download,
+  FilePlus, Search, Eye, Download,
   Trash2, FileText, Clock, Award,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -68,39 +69,38 @@ export default function MyPapersPage() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">My Papers</h1>
-          <p className="text-sm text-gray-500">{papers.length} paper{papers.length !== 1 ? 's' : ''} total</p>
-        </div>
-        <Link to="/app/papers/generate" className="btn-primary self-start">
-          <FilePlus className="w-4 h-4" /> Generate New Paper
-        </Link>
-      </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <PageHeader
+        title="My Papers"
+        description={`${papers.length} paper${papers.length !== 1 ? 's' : ''} total`}
+        action={
+          <Link to="/app/papers/generate" className="btn-primary">
+            <FilePlus className="w-4 h-4" /> Generate New Paper
+          </Link>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
           <input
-            className="input pl-9"
+            className="input pl-11"
             placeholder="Search papers by title, class, or subject..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex gap-1 bg-surface-100 rounded-xl p-1">
           {STATUS_TABS.map(tab => (
             <button
               key={tab.value}
               onClick={() => { setStatusFilter(tab.value); setPage(1); }}
               className={clsx(
-                'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
                 statusFilter === tab.value
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white text-surface-900 shadow-sm'
+                  : 'text-surface-500 hover:text-surface-700'
               )}
             >
               {tab.label}
@@ -113,81 +113,76 @@ export default function MyPapersPage() {
       {loading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="card p-5 animate-pulse space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-              <div className="h-3 bg-gray-100 rounded w-1/2" />
-              <div className="h-3 bg-gray-100 rounded w-2/3" />
+            <div key={i} className="card p-5 space-y-3 animate-pulse">
+              <div className="h-4 bg-surface-200 rounded w-3/4" />
+              <div className="h-3 bg-surface-100 rounded w-1/2" />
+              <div className="h-3 bg-surface-100 rounded w-2/3" />
               <div className="flex gap-2 pt-2">
-                <div className="h-8 bg-gray-100 rounded flex-1" />
-                <div className="h-8 bg-gray-100 rounded flex-1" />
+                <div className="h-8 bg-surface-100 rounded flex-1" />
+                <div className="h-8 bg-surface-100 rounded flex-1" />
               </div>
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card p-16 text-center">
-          <FileText className="w-14 h-14 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            {search ? 'No papers match your search' : 'No papers yet'}
-          </h3>
-          <p className="text-sm text-gray-500 mb-6">
-            {search ? 'Try a different search term' : 'Generate your first exam paper to get started'}
-          </p>
-          <Link to="/app/papers/generate" className="btn-primary inline-flex">
-            <FilePlus className="w-4 h-4" /> Generate Paper
-          </Link>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={search ? 'No papers match your search' : 'No papers yet'}
+          description={search ? 'Try a different search term' : "You haven't generated any papers. Create your first paper in less than 2 minutes."}
+          action={
+            !search ? (
+              <Link to="/app/papers/generate" className="btn-primary">
+                <FilePlus className="w-4 h-4" /> Generate Paper
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(paper => (
-            <div key={paper.id} className="card flex flex-col hover:shadow-md transition-shadow">
+            <div key={paper.id} className="card flex flex-col hover:shadow-lg transition-all group">
               <div className="p-5 flex-1">
-                {/* Status & Date */}
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <StatusBadge status={paper.status} />
-                  <span className="text-xs text-gray-400">{format(new Date(paper.createdAt), 'dd MMM yyyy')}</span>
+                  <span className="text-xs text-surface-400">{format(new Date(paper.createdAt), 'dd MMM yyyy')}</span>
                 </div>
 
-                {/* Title */}
-                <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1 line-clamp-2">
+                <h3 className="font-semibold text-surface-900 text-sm leading-snug mb-1.5 line-clamp-2 group-hover:text-brand-700 transition-colors">
                   {paper.title}
                 </h3>
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-xs text-surface-500 mb-3">
                   {paper.class.name} · {paper.paperSubjects.map(ps => ps.subject.name).join(', ')}
                 </p>
 
-                {/* Meta chips */}
                 <div className="flex flex-wrap gap-1.5">
-                  <MetaChip icon={Award} label={`${paper.totalMarks} marks`} />
-                  <MetaChip icon={Clock} label={`${paper.timeLimit} min`} />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-50 rounded-full text-xs text-surface-600 font-medium">
+                    <Award className="w-3 h-3" />{paper.totalMarks} marks
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-50 rounded-full text-xs text-surface-600 font-medium">
+                    <Clock className="w-3 h-3" />{paper.timeLimit} min
+                  </span>
                   {paper.paperSettings && (
-                    <MetaChip
-                      icon={FileText}
-                      label={`${paper.paperSettings.mcqCount + paper.paperSettings.shortCount + paper.paperSettings.essayCount} Qs`}
-                    />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-50 rounded-full text-xs text-surface-600 font-medium">
+                      <FileText className="w-3 h-3" />
+                      {paper.paperSettings.mcqCount + paper.paperSettings.shortCount + paper.paperSettings.essayCount} Qs
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="px-5 py-3 border-t border-gray-100 flex gap-2">
-                <Link to={`/papers/${paper.id}`} className="btn-secondary flex-1 text-xs py-1.5">
+              <div className="px-5 py-3.5 border-t border-surface-100 flex gap-2">
+                <Link to={`/papers/${paper.id}`} className="btn-secondary flex-1 btn-sm">
                   <Eye className="w-3.5 h-3.5" /> View
                 </Link>
-                <button
-                  onClick={() => handleDownload(paper.id)}
-                  className="btn-primary flex-1 text-xs py-1.5"
-                >
+                <button onClick={() => handleDownload(paper.id)} className="btn-primary flex-1 btn-sm">
                   <Download className="w-3.5 h-3.5" /> PDF
                 </button>
                 <button
                   onClick={() => handleDelete(paper.id, paper.title)}
                   disabled={deleting === paper.id}
-                  className="btn-ghost text-red-500 hover:bg-red-50 px-2.5 py-1.5"
+                  className="btn-ghost text-red-500 hover:bg-red-50 btn-sm px-2.5"
                 >
-                  {deleting === paper.id
-                    ? <span className="spinner w-3.5 h-3.5" />
-                    : <Trash2 className="w-3.5 h-3.5" />}
+                  {deleting === paper.id ? <span className="spinner-sm" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
@@ -197,46 +192,16 @@ export default function MyPapersPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="btn-secondary text-sm"
-          >
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary btn-sm">
             Previous
           </button>
-          <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="btn-secondary text-sm"
-          >
+          <span className="text-sm text-surface-600 font-medium">Page {page} of {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-secondary btn-sm">
             Next
           </button>
         </div>
       )}
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: PaperStatus }) {
-  return (
-    <span className={clsx(
-      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-      status === 'final'    && 'bg-green-100 text-green-700',
-      status === 'draft'    && 'bg-gray-100 text-gray-600',
-      status === 'archived' && 'bg-amber-100 text-amber-700',
-    )}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-}
-
-function MetaChip({ icon: Icon, label }: { icon: any; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600">
-      <Icon className="w-3 h-3" />
-      {label}
-    </span>
   );
 }

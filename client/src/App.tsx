@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './store/hooks';
-import { setCredentials, logout, setLoading } from './store/slices/authSlice';
+import { setCredentials, logout } from './store/slices/authSlice';
 import { authApi } from './api/auth';
 
 // Layouts
@@ -30,17 +30,21 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { user } = useAppSelector((s) => s.auth);
   if (!user || !['super_admin', 'school_admin'].includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/app/dashboard" replace />;
   }
   return <>{children}</>;
 }
 
 function FullPageSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-        <p className="text-sm text-gray-500">Loading...</p>
+    <div className="min-h-screen flex items-center justify-center bg-surface-50">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 gradient-brand rounded-2xl flex items-center justify-center shadow-brand animate-pulse-soft">
+          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <p className="text-sm text-surface-500 font-medium">Loading Pak Test...</p>
       </div>
     </div>
   );
@@ -51,7 +55,6 @@ export default function App() {
   const dispatch = useAppDispatch();
   const { isLoading } = useAppSelector((s) => s.auth);
 
-  // Auto-login: try refreshing token on mount
   useEffect(() => {
     const init = async () => {
       try {
@@ -70,11 +73,11 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Public marketing site */}
+      {/* Public */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Protected app */}
+      {/* Protected */}
       <Route
         path="/app"
         element={
@@ -93,6 +96,7 @@ export default function App() {
 
         {/* Admin only */}
         <Route path="admin/users" element={<RequireAdmin><AdminUsersPage /></RequireAdmin>} />
+        <Route path="admin/analytics" element={<RequireAdmin><AdminAuditPage /></RequireAdmin>} />
         <Route path="admin/audit" element={<RequireAdmin><AdminAuditPage /></RequireAdmin>} />
       </Route>
 

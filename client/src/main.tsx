@@ -16,8 +16,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           position="top-right"
           toastOptions={{
             duration: 3000,
-            style: { borderRadius: '10px', fontSize: '14px', maxWidth: '380px' },
-            success: { iconTheme: { primary: '#534AB7', secondary: '#fff' } },
+            style: {
+              borderRadius: '12px',
+              fontSize: '14px',
+              maxWidth: '380px',
+              padding: '12px 16px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.08)',
+            },
+            success: { iconTheme: { primary: '#4F46E5', secondary: '#fff' } },
+            error: { iconTheme: { primary: '#DC2626', secondary: '#fff' } },
           }}
         />
       </BrowserRouter>
