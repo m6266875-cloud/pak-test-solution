@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FilePlus, Files, Database,
   Users, ClipboardList, User, LogOut, Menu, X,
   BookOpen, ChevronDown, Search, Bell,
-  BarChart3, Settings, School,
+  BarChart3, School, Library,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -22,6 +22,8 @@ const getNavItems = (role: string) => {
   ];
   const admin = [
     { label: 'Manage Users',   href: '/app/admin/users',      icon: Users,            roles: ['super_admin','school_admin'] },
+    { label: 'Schools',        href: '/app/admin/schools',    icon: School,           roles: ['super_admin','school_admin'] },
+    { label: 'Syllabus',       href: '/app/admin/syllabus',   icon: Library,          roles: ['super_admin','school_admin'] },
     { label: 'Analytics',      href: '/app/admin/analytics',  icon: BarChart3,        roles: ['super_admin','school_admin'] },
     { label: 'Audit Logs',     href: '/app/admin/audit',      icon: ClipboardList,    roles: ['super_admin'] },
   ];

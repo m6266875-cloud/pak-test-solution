@@ -17,6 +17,8 @@ import paperRoutes from './routes/paperRoutes';
 import subjectRoutes from './routes/subjectRoutes';
 import adminRoutes from './routes/adminRoutes';
 import questionRoutes from './routes/questionRoutes';
+import schoolRoutes from './routes/schoolRoutes';
+import syllabusRoutes from './routes/syllabusRoutes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -86,6 +88,8 @@ app.use('/api/papers', paperRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/schools', schoolRoutes);
+app.use('/api/syllabus', syllabusRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

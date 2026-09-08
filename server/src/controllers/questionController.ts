@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient, QuestionType, Difficulty } from '@prisma/client';
+import { PrismaClient, QuestionType, Difficulty, QuestionStatus } from '@prisma/client';
 import { successResponse, paginatedResponse, ApiError } from '../utils/apiResponse';
 import { AuthRequest } from '../middleware/auth';
 
@@ -34,9 +34,12 @@ export const getQuestions = async (req: Request, res: Response, next: NextFuncti
     const skip = (page - 1) * limit;
 
     const where: any = { isActive: true };
-    if (req.query.chapterId) where.chapterId = Number(req.query.chapterId);
+    if (req.query.chapterId)  where.chapterId  = Number(req.query.chapterId);
+    if (req.query.exerciseId) where.exerciseId = Number(req.query.exerciseId);
+    if (req.query.topicId)    where.topicId    = Number(req.query.topicId);
     if (req.query.type)       where.type = req.query.type as QuestionType;
     if (req.query.difficulty) where.difficulty = req.query.difficulty as Difficulty;
+    if (req.query.status)     where.status = req.query.status as QuestionStatus;
     if (req.query.search) {
       where.text = { contains: req.query.search as string, mode: 'insensitive' };
     }
@@ -86,7 +89,7 @@ export const getQuestionStats = async (req: Request, res: Response, next: NextFu
     const chapterId = req.query.chapterId ? Number(req.query.chapterId) : undefined;
     const where = chapterId ? { chapterId, isActive: true } : { isActive: true };
 
-    const [total, byType, byDifficulty] = await Promise.all([
+    const [total, byType, byDifficulty, byStatus, bySource, byLanguage] = await Promise.all([
       prisma.question.count({ where }),
       prisma.question.groupBy({
         by: ['type'],
@@ -98,9 +101,75 @@ export const getQuestionStats = async (req: Request, res: Response, next: NextFu
         where,
         _count: { id: true },
       }),
+      prisma.question.groupBy({
+        by: ['status'],
+        where,
+        _count: { id: true },
+      }),
+      prisma.question.groupBy({
+        by: ['source'],
+        where,
+        _count: { id: true },
+      }),
+      prisma.question.groupBy({
+        by: ['language'],
+        where,
+        _count: { id: true },
+      }),
     ]);
 
-    successResponse(res, { total, byType, byDifficulty }, 'Stats fetched');
+    successResponse(res, { total, byType, byDifficulty, byStatus, bySource, byLanguage }, 'Stats fetched');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Question approval workflow ──────────────────────────────────────────────
+export const approveQuestion = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await prisma.question.findUnique({ where: { id } });
+    if (!existing) throw ApiError.notFound('Question not found');
+
+    const question = await prisma.question.update({
+      where: { id },
+      data: { status: 'approved' },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'approve_question',
+        details: { questionId: id, previousStatus: existing.status },
+      },
+    });
+
+    successResponse(res, question, 'Question approved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const rejectQuestion = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await prisma.question.findUnique({ where: { id } });
+    if (!existing) throw ApiError.notFound('Question not found');
+
+    const question = await prisma.question.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'reject_question',
+        details: { questionId: id, previousStatus: existing.status, reason: req.body?.reason },
+      },
+    });
+
+    successResponse(res, question, 'Question rejected');
   } catch (err) {
     next(err);
   }

@@ -180,22 +180,62 @@ pak-test-solution/
 ### Questions
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET  | `/api/questions` | List questions (filterable) |
-| GET  | `/api/questions/stats` | Question bank statistics |
+| GET  | `/api/questions` | List questions (filterable, incl. `status`/`exerciseId`/`topicId`) |
+| GET  | `/api/questions/stats` | Question bank statistics (type, difficulty, status, source, language) |
 | POST | `/api/questions` | Create question (admin) |
 | POST | `/api/questions/bulk` | Bulk import JSON (admin) |
 | PUT  | `/api/questions/:id` | Update question (admin) |
 | DELETE | `/api/questions/:id` | Soft delete question (admin) |
+| PATCH | `/api/questions/:id/approve` | Approve question — approval workflow (admin) |
+| PATCH | `/api/questions/:id/reject` | Reject question — approval workflow (admin) |
 
 ### Admin
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET  | `/api/admin/dashboard` | Stats overview |
+| GET  | `/api/admin/dashboard` | Stats overview (incl. syllabus counts & question breakdown) |
 | GET  | `/api/admin/users` | List all users |
 | POST | `/api/admin/users` | Create user |
 | PUT  | `/api/admin/users/:id` | Update user |
 | PATCH | `/api/admin/users/:id/toggle` | Activate/deactivate |
 | GET  | `/api/admin/audit-logs` | Audit trail |
+| POST | `/api/admin/teacher-subjects` | Assign subject+class to teacher |
+| DELETE | `/api/admin/teacher-subjects` | Remove teacher-subject assignment |
+| PUT  | `/api/admin/users/:id/permissions` | Replace user's admin permissions (super admin) |
+
+### Schools *(Admin System Upgrade)*
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET  | `/api/schools` | List schools (search, status filter, pagination) |
+| GET  | `/api/schools/:id` | School detail |
+| POST | `/api/schools` | Create school (super admin) |
+| PUT  | `/api/schools/:id` | Update school (super admin) |
+| PATCH | `/api/schools/:id/status` | Toggle / set status `active`/`inactive`/`suspended` (super admin) |
+
+### Syllabus / PTB Hierarchy *(Admin System Upgrade)*
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET/POST | `/api/syllabus/boards` | List / create boards |
+| PUT/DELETE | `/api/syllabus/boards/:id` | Update / delete board |
+| GET/POST | `/api/syllabus/books` | List (filters: board/class/subject/status/search) / create book |
+| GET/PUT/DELETE | `/api/syllabus/books/:id` | Book detail / update / delete |
+| GET  | `/api/syllabus/chapters?bookId=` | Chapter tree with exercises & topics |
+| PUT  | `/api/syllabus/chapters/:id/book` | Link/unlink chapter to a book |
+| GET/POST | `/api/syllabus/exercises` | List (by chapter) / create exercise |
+| PUT/DELETE | `/api/syllabus/exercises/:id` | Update / delete exercise |
+| GET/POST | `/api/syllabus/topics` | List (by chapter) / create topic |
+| PUT/DELETE | `/api/syllabus/topics/:id` | Update / delete topic |
+
+---
+
+## 🏫 Admin System Upgrade
+
+Additive upgrade — all existing functionality is preserved.
+
+**New data models** (Prisma, PostgreSQL): `School`, `Board`, `Book` (PTB textbook), `Exercise`, `Topic`, `AdminPermission`, plus enums `SchoolStatus`, `BookStatus`, `QuestionSource`, `QuestionStatus`. Extended: `User.schoolId`, `Subject.boardId/schoolId`, `Chapter.bookId`, `Question.exerciseId/topicId/language/source/status`, `PaperFormatting.schoolLogoUrl`.
+
+**Frontend:** new admin pages **Schools** (`/app/admin/schools`) and **Syllabus** (`/app/admin/syllabus`) with CRUD, filters, and exercise/topic drill-down; the admin dashboard shows a syllabus stats row and pending-question approvals.
+
+**Mock preview:** `cd mock-server && npm start` — seeded with 3 schools, 4 boards (BISE Lahore/Rawalpindi/Karachi, FBISE), 3 PTB books, sample exercises & topics. Default preview profile: `super_admin`.
 
 ---
 

@@ -17,6 +17,8 @@ import PaperDetailPage from './pages/Papers/PaperDetailPage';
 import QuestionBankPage from './pages/Questions/QuestionBankPage';
 import AdminUsersPage from './pages/Admin/AdminUsersPage';
 import AdminAuditPage from './pages/Admin/AdminAuditPage';
+import SchoolsPage from './pages/Admin/SchoolsPage';
+import SyllabusPage from './pages/Admin/SyllabusPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -96,6 +98,8 @@ export default function App() {
 
         {/* Admin only */}
         <Route path="admin/users" element={<RequireAdmin><AdminUsersPage /></RequireAdmin>} />
+        <Route path="admin/schools" element={<RequireAdmin><SchoolsPage /></RequireAdmin>} />
+        <Route path="admin/syllabus" element={<RequireAdmin><SyllabusPage /></RequireAdmin>} />
         <Route path="admin/analytics" element={<RequireAdmin><AdminAuditPage /></RequireAdmin>} />
         <Route path="admin/audit" element={<RequireAdmin><AdminAuditPage /></RequireAdmin>} />
       </Route>
