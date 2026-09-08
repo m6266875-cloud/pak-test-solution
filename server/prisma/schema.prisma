@@ -14,17 +14,119 @@ model User {
   name          String
   role          Role      @default(teacher)
   schoolName    String?
+  schoolId      Int?
   phone         String?
   isActive      Boolean   @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  teacherSubjects TeacherSubject[]
-  papers          Paper[]          @relation("TeacherPapers")
-  createdPapers   Paper[]          @relation("AdminCreatedPapers")
-  activityLogs    ActivityLog[]
-  refreshTokens   RefreshToken[]
+  school           School?           @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  teacherSubjects  TeacherSubject[]
+  papers           Paper[]           @relation("TeacherPapers")
+  createdPapers    Paper[]           @relation("AdminCreatedPapers")
+  activityLogs     ActivityLog[]
+  refreshTokens    RefreshToken[]
+  adminPermissions AdminPermission[]
+}
+
+// ─── Admin System Upgrade: Schools ───────────────────────────────────────────
+model School {
+  id        Int          @id @default(autoincrement())
+  name      String
+  code      String       @unique
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  logoUrl   String?
+  principal String?
+  status    SchoolStatus @default(active)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  users    User[]
+  subjects Subject[]
+
+  @@index([status])
+  @@index([city])
+}
+
+// ─── Admin System Upgrade: Syllabus / PTB hierarchy ──────────────────────────
+model Board {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique
+  region    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books    Book[]
+  subjects Subject[]
+}
+
+model Book {
+  id        Int        @id @default(autoincrement())
+  title     String
+  publisher String?
+  edition   String?
+  year      Int?
+  language  Medium     @default(english)
+  fileUrl   String?
+  status    BookStatus @default(active)
+  boardId   Int?
+  classId   Int?
+  subjectId Int?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  board    Board?    @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  class    Class?    @relation(fields: [classId], references: [id], onDelete: SetNull)
+  subject  Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  chapters Chapter[]
+
+  @@index([boardId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([status])
+}
+
+model Exercise {
+  id        Int      @id @default(autoincrement())
+  name      String
+  number    Int      @default(1)
+  chapterId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@unique([number, chapterId])
+}
+
+model Topic {
+  id        Int      @id @default(autoincrement())
+  name      String
+  chapterId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@index([chapterId])
+}
+
+model AdminPermission {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  permission String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
 }
 
 model RefreshToken {
@@ -61,6 +163,7 @@ model Class {
   subjects        Subject[]
   teacherSubjects TeacherSubject[]
   papers          Paper[]
+  books           Book[]
 }
 
 model Subject {
@@ -69,12 +172,17 @@ model Subject {
   code        String?
   medium      Medium   @default(english)
   classId     Int
+  boardId     Int?
+  schoolId    Int?
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  board           Board?           @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  school          School?          @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   chapters        Chapter[]
+  books           Book[]
   teacherSubjects TeacherSubject[]
   paperSubjects   PaperSubject[]
 
@@ -86,33 +194,48 @@ model Chapter {
   name        String
   number      Int
   subjectId   Int
+  bookId      Int?
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  book          Book?          @relation(fields: [bookId], references: [id], onDelete: SetNull)
   questions     Question[]
+  exercises     Exercise[]
+  topics        Topic[]
   paperChapters PaperChapter[]
 
   @@unique([number, subjectId])
 }
 
 model Question {
-  id         Int          @id @default(autoincrement())
+  id         Int            @id @default(autoincrement())
   chapterId  Int
-  type       QuestionType @default(mcq)
-  text       String       @db.Text
-  marks      Int          @default(1)
+  exerciseId Int?
+  topicId    Int?
+  type       QuestionType   @default(mcq)
+  text       String         @db.Text
+  marks      Int            @default(1)
   options    Json?
-  answer     String?      @db.Text
-  difficulty Difficulty   @default(easy)
+  answer     String?        @db.Text
+  difficulty Difficulty     @default(easy)
+  language   Medium         @default(english)
+  source     QuestionSource @default(manual)
+  status     QuestionStatus @default(approved)
   tags       String[]
-  isActive   Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  isActive   Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   chapter        Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  exercise       Exercise?       @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  topic          Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
   paperQuestions PaperQuestion[]
+
+  @@index([status])
+  @@index([exerciseId])
+  @@index([topicId])
 }
 
 model Paper {
@@ -214,6 +337,7 @@ model PaperFormatting {
   schoolName      String?
   schoolNameSize  Int        @default(16)
   schoolNameColor String     @default("#000000")
+  schoolLogoUrl   String?
   headerNote      String?
   footerNote      String?
   createdAt       DateTime   @default(now())
@@ -283,4 +407,30 @@ enum LayoutType {
   single_page
   double_page
   half_page
+}
+
+// ─── Admin System Upgrade enums ──────────────────────────────────────────────
+enum SchoolStatus {
+  active
+  inactive
+  suspended
+}
+
+enum BookStatus {
+  active
+  inactive
+  archived
+}
+
+enum QuestionSource {
+  manual
+  imported
+  past_paper
+  exercise
+}
+
+enum QuestionStatus {
+  pending
+  approved
+  rejected
 }

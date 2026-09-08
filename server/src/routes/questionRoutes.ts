@@ -5,6 +5,7 @@ import { authenticate, requireSchoolAdmin } from '../middleware/auth';
 import {
   createQuestion, bulkCreateQuestions, getQuestions,
   updateQuestion, deleteQuestion, getQuestionStats,
+  approveQuestion, rejectQuestion,
 } from '../controllers/questionController';
 
 const router = Router();
@@ -25,5 +26,7 @@ router.post('/',                  requireSchoolAdmin, validate(questionValidatio
 router.post('/bulk',              requireSchoolAdmin, bulkCreateQuestions);
 router.put('/:id',                requireSchoolAdmin, updateQuestion);
 router.delete('/:id',             requireSchoolAdmin, deleteQuestion);
+router.patch('/:id/approve',      requireSchoolAdmin, approveQuestion);
+router.patch('/:id/reject',       requireSchoolAdmin, rejectQuestion);
 
 export default router;

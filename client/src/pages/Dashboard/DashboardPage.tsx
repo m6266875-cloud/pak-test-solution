@@ -9,8 +9,9 @@ import { motion } from 'framer-motion';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
 import {
   FilePlus, Files, Database, TrendingUp,
-  BookOpen, Clock, Award, Users, ArrowRight, Download,
-  BarChart3, Zap, Calendar,
+  BookOpen, Clock, Award, Users, ArrowRight,
+  Zap, Calendar, School, Landmark, BookMarked, Layers,
+  ListTree, GraduationCap, ClipboardCheck,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -103,6 +104,73 @@ export default function DashboardPage() {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {/* ═══ SYLLABUS STATS ROW (Admin System Upgrade) ═══ */}
+      {isAdmin && stats?.syllabus && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-surface-700 flex items-center gap-2">
+              <BookMarked className="w-4 h-4 text-brand-600" /> Syllabus Overview
+            </h2>
+            <Link to="/app/admin/syllabus" className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1">
+              Manage syllabus <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {[
+              { icon: School,         label: 'Schools',   value: stats.syllabus.schools,   to: '/app/admin/schools',  tint: 'bg-rose-50 text-rose-600' },
+              { icon: Landmark,       label: 'Boards',    value: stats.syllabus.boards,    to: '/app/admin/syllabus', tint: 'bg-indigo-50 text-indigo-600' },
+              { icon: BookMarked,     label: 'Books',     value: stats.syllabus.books,     to: '/app/admin/syllabus', tint: 'bg-emerald-50 text-emerald-600' },
+              { icon: GraduationCap,  label: 'Classes',   value: stats.syllabus.classes,   to: '',                   tint: 'bg-sky-50 text-sky-600' },
+              { icon: Layers,         label: 'Chapters',  value: stats.syllabus.chapters,  to: '/app/admin/syllabus', tint: 'bg-purple-50 text-purple-600' },
+              { icon: FilePlus,       label: 'Exercises', value: stats.syllabus.exercises, to: '/app/admin/syllabus', tint: 'bg-amber-50 text-amber-600' },
+            ].map((item) => {
+              const inner = (
+                <div className="card p-4 text-center hover:shadow-md transition-all h-full">
+                  <div className={clsx('w-9 h-9 rounded-xl mx-auto flex items-center justify-center mb-2', item.tint)}>
+                    <item.icon className="w-4.5 h-4.5" />
+                  </div>
+                  <div className="text-xl font-bold text-surface-900 font-display">{item.value}</div>
+                  <div className="text-xs text-surface-500 font-medium">{item.label}</div>
+                </div>
+              );
+              return item.to
+                ? <Link key={item.label} to={item.to} className="block">{inner}</Link>
+                : <div key={item.label}>{inner}</div>;
+            })}
+          </div>
+
+          {/* Topics + pending approvals mini-row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            <div className="card px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                <ListTree className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-semibold text-surface-900">{stats.syllabus.topics}</span>
+                <span className="text-sm text-surface-500 ml-1.5">topics mapped across the syllabus</span>
+              </div>
+            </div>
+            {stats.questionBreakdown && (
+              <Link to="/app/questions" className="card px-4 py-3 flex items-center gap-3 hover:shadow-md transition-all">
+                <div className={clsx(
+                  'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                  stats.questionBreakdown.pending > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                )}>
+                  <ClipboardCheck className="w-4 h-4" />
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm font-semibold text-surface-900">{stats.questionBreakdown.pending}</span>
+                  <span className="text-sm text-surface-500 ml-1.5">
+                    questions {stats.questionBreakdown.pending > 0 ? 'awaiting approval' : 'pending — all caught up'}
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-surface-300" />
+              </Link>
+            )}
+          </div>
+        </motion.div>
       )}
 
       {/* ═══ MAIN CONTENT GRID ═══ */}
