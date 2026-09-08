@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String    @db.Text
+  name          String
+  role          Role      @default(teacher)
+  schoolName    String?
+  phone         String?
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  teacherSubjects TeacherSubject[]
+  papers          Paper[]          @relation("TeacherPapers")
+  createdPapers   Paper[]          @relation("AdminCreatedPapers")
+  activityLogs    ActivityLog[]
+  refreshTokens   RefreshToken[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.Text
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TeacherSubject {
+  id        Int      @id @default(autoincrement())
+  teacherId Int
+  subjectId Int
+  classId   Int
+  createdAt DateTime @default(now())
+
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id])
+
+  @@unique([teacherId, subjectId, classId])
+}
+
+model Class {
+  id        Int      @id @default(autoincrement())
+  name      String
+  grade     Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subjects        Subject[]
+  teacherSubjects TeacherSubject[]
+  papers          Paper[]
+}
+
+model Subject {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String?
+  medium      Medium   @default(english)
+  classId     Int
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  chapters        Chapter[]
+  teacherSubjects TeacherSubject[]
+  paperSubjects   PaperSubject[]
+
+  @@unique([name, classId, medium])
+}
+
+model Chapter {
+  id          Int      @id @default(autoincrement())
+  name        String
+  number      Int
+  subjectId   Int
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions     Question[]
+  paperChapters PaperChapter[]
+
+  @@unique([number, subjectId])
+}
+
+model Question {
+  id         Int          @id @default(autoincrement())
+  chapterId  Int
+  type       QuestionType @default(mcq)
+  text       String       @db.Text
+  marks      Int          @default(1)
+  options    Json?
+  answer     String?      @db.Text
+  difficulty Difficulty   @default(easy)
+  tags       String[]
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  chapter        Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  paperQuestions PaperQuestion[]
+}
+
+model Paper {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?
+  teacherId   Int
+  createdById Int
+  classId     Int
+  medium      Medium      @default(english)
+  totalMarks  Int
+  timeLimit   Int?
+  status      PaperStatus @default(draft)
+  isPublished Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  teacher          User             @relation("TeacherPapers", fields: [teacherId], references: [id])
+  createdBy        User             @relation("AdminCreatedPapers", fields: [createdById], references: [id])
+  class            Class            @relation(fields: [classId], references: [id])
+  paperSubjects    PaperSubject[]
+  paperChapters    PaperChapter[]
+  paperQuestions   PaperQuestion[]
+  paperSettings    PaperSetting?
+  paperFormatting  PaperFormatting?
+  activityLogs     ActivityLog[]
+}
+
+model PaperSubject {
+  id        Int @id @default(autoincrement())
+  paperId   Int
+  subjectId Int
+
+  paper   Paper   @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([paperId, subjectId])
+}
+
+model PaperChapter {
+  id        Int @id @default(autoincrement())
+  paperId   Int
+  chapterId Int
+
+  paper   Paper   @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id])
+
+  @@unique([paperId, chapterId])
+}
+
+model PaperQuestion {
+  id         Int      @id @default(autoincrement())
+  paperId    Int
+  questionId Int
+  marks      Int
+  order      Int      @default(0)
+  isSelected Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  paper    Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@unique([paperId, questionId])
+}
+
+model PaperSetting {
+  id                 Int      @id @default(autoincrement())
+  paperId            Int      @unique
+  questionCount      Int      @default(20)
+  mcqCount           Int      @default(10)
+  mcqMarks           Int      @default(1)
+  shortCount         Int      @default(5)
+  shortMarks         Int      @default(3)
+  essayCount         Int      @default(3)
+  essayMarks         Int      @default(10)
+  randomize          Boolean  @default(true)
+  ignoreMarksEnabled Boolean  @default(false)
+  ignoreMarks        Json?
+  blankLines         Json?
+  showAnswerKey      Boolean  @default(true)
+  showBubbleSheet    Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+}
+
+model PaperFormatting {
+  id              Int        @id @default(autoincrement())
+  paperId         Int        @unique
+  fontFamily      String     @default("Arial")
+  fontSize        Int        @default(12)
+  lineHeight      Float      @default(1.5)
+  bold            Boolean    @default(false)
+  color           String     @default("#000000")
+  layoutType      LayoutType @default(single_page)
+  showBorder      Boolean    @default(false)
+  borderColor     String     @default("#0000FF")
+  schoolName      String?
+  schoolNameSize  Int        @default(16)
+  schoolNameColor String     @default("#000000")
+  headerNote      String?
+  footerNote      String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+}
+
+model PastPaper {
+  id        Int      @id @default(autoincrement())
+  title     String
+  year      Int
+  board     String   @default("Punjab")
+  classId   Int
+  subjectId Int
+  paperUrl  String   @db.Text
+  isOfficial Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  details   Json?
+  paperId   Int?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paper Paper? @relation(fields: [paperId], references: [id], onDelete: SetNull)
+}
+
+enum Role {
+  super_admin
+  school_admin
+  teacher
+}
+
+enum Medium {
+  english
+  urdu
+  bilingual
+}
+
+enum QuestionType {
+  mcq
+  short
+  essay
+}
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
+enum PaperStatus {
+  draft
+  final
+  archived
+}
+
+enum LayoutType {
+  single_page
+  double_page
+  half_page
+}
