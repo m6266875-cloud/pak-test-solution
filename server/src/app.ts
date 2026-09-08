@@ -19,6 +19,14 @@ import adminRoutes from './routes/adminRoutes';
 import questionRoutes from './routes/questionRoutes';
 import schoolRoutes from './routes/schoolRoutes';
 import syllabusRoutes from './routes/syllabusRoutes';
+// Phase 2 (question bank v2 / catalog scope / paper generator v2 / patterns).
+// Mounted under /api/v2 so the legacy /api/* endpoints keep their exact
+// behaviour; the client uses the v2 superset.
+import phase2Api from './phase2/mount';
+// Phase 3 (schools / user administration / branding / templates / analytics /
+// activity log / paper PDF). Shares the Phase-2 JWT, mounted at /api/v3.
+import phase3Api from './phase3/mount';
+import { createV2Governance } from './phase3/v2Governance';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -90,6 +98,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/syllabus', syllabusRoutes);
+app.use('/api/v2', createV2Governance(), phase2Api);
+app.use('/api/v3', phase3Api);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

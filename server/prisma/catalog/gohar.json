@@ -1,0 +1,211 @@
+{
+  "_comment": "GOHAR Publishers catalog (Classes 1-8). Primary rows anchored to the official NCC 2021 approved list (ICT); 4-8 rows anchored to Gohar SNC Resources pages. verify:false = per-subject/per-class alignment pending publisher confirmation.",
+  "courseCode": "GOHAR",
+  "defaults": {
+    "publisher": "GOHAR Publishers (Lahore)",
+    "session": "2026-27",
+    "source": "s12"
+  },
+  "classes": [
+    {
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Gohar English {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Nida-e-Urdu {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Gohar Mathematics {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Gohar Islamiat {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "General Knowledge",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC General Knowledge {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          },
+          "note": "Series per Gohar SNC Resources page (class 1-8)."
+        }
+      ]
+    },
+    {
+      "grades": [
+        4,
+        5
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC English {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          },
+          "note": "Gohar SNC Resources list English for class 1-8."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Nida-e-Urdu {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC Mathematics {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          },
+          "note": "Spark SNC Mathematics (grades 1-8) is Gohar's alternative math series."
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "Gohar Science {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC Social Studies {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Gohar Islamiat {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        }
+      ]
+    },
+    {
+      "grades": [
+        6,
+        7,
+        8
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC English {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Nida-e-Urdu {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC Mathematics {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC Science {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "em",
+          "book": {
+            "title": "Gohar SNC Social Studies {g}",
+            "edition": "SNC Edition",
+            "year": 2022,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "note": "Gohar Islamiat approved 2021 for 1-5; 6-8 mapping pending."
+        }
+      ]
+    }
+  ]
+}

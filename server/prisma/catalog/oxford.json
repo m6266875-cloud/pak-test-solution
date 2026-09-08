@@ -1,0 +1,220 @@
+{
+  "_comment": "Oxford University Press Pakistan school catalog (Classes 1-8). Primary rows (1-5) anchored to the official NCC 2021 approved-model-textbook list for ICT; secondary rows (6-8) anchored to the OUP Pakistan 2025-26 catalogue. verify:false rows = series/products confirmed by publisher, per-subject/per-class alignment pending.",
+  "courseCode": "OUP",
+  "defaults": {
+    "publisher": "Oxford University Press (Pakistan)",
+    "session": "2026-27",
+    "source": "s10"
+  },
+  "classes": [
+    {
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Oxford Progressive English {g}",
+            "edition": "SNC-approved series (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Approved 2021: 'Oxford Progressive English Series' grades 1-5 (ICT)."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu Ka Guldasta (Khususi Isha'at) {g}",
+            "edition": "SNC-aligned edition",
+            "year": 2024,
+            "verify": false
+          },
+          "note": "Current OUP Pakistan Urdu course, classes 1-8."
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "New Countdown {g}",
+            "edition": "Third Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Approved 2021: 'Countdown Series' 1-5; current third edition extends to 8."
+        },
+        {
+          "name": "General Knowledge",
+          "medium": "em",
+          "note": "No verified OUP SNC General Knowledge title in the 2021 approvals — pending publisher mapping."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "note": "No verified OUP SNC Islamiyat title in the 2021 approvals — pending publisher mapping."
+        }
+      ]
+    },
+    {
+      "grades": [
+        4,
+        5
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Oxford Progressive English {g}",
+            "edition": "SNC-approved series (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu Ka Guldasta (Khususi Isha'at) {g}",
+            "edition": "SNC-aligned edition",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "New Countdown {g}",
+            "edition": "Third Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "New Oxford Primary Science {g}",
+            "edition": "SNC-approved series (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Also approved 2021 for grades 4-5: The Science Factor, New Amazing Science, Miracles of Science."
+        },
+        {
+          "name": "Social Studies",
+          "medium": "em",
+          "book": {
+            "title": "New Oxford Social Studies {g}",
+            "edition": "SNC-approved series (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Also approved 2021 for grades 4-5: Know Your World, World Watch."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "note": "No verified OUP SNC Islamiyat title in the 2021 approvals — pending publisher mapping."
+        }
+      ]
+    },
+    {
+      "grades": [
+        6,
+        7,
+        8
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Oxford Progressive English {g}",
+            "edition": "Second Edition",
+            "year": 2023,
+            "verify": false
+          },
+          "note": "OUP Pakistan catalogue (2025-26); NCP-aligned lower secondary."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu Ka Guldasta (Khususi Isha'at) {g}",
+            "edition": "1st Edition (Khususi Isha'at)",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "New Countdown {g}",
+            "edition": "Third Edition (Enhanced Blended Edition)",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "Science Fact File {gMinus5}",
+            "edition": "Third Edition",
+            "year": 2023,
+            "verify": false
+          },
+          "note": "Science Fact File Books 1-3 map to grades 6-8 (publisher series convention)."
+        },
+        {
+          "name": "Social Studies",
+          "medium": "em",
+          "books": [
+            {
+              "title": "World Watch History Book {gMinus5}",
+              "edition": "Second Edition",
+              "year": 2023,
+              "verify": false
+            },
+            {
+              "title": "World Watch Geography Book {gMinus5}",
+              "edition": "Second Edition",
+              "year": 2023,
+              "verify": false
+            }
+          ],
+          "note": "World Watch History & Geography Book 1-3 map to grades 6-8 (publisher series convention)."
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Oxford Computing {gMinus5}",
+            "edition": "Latest Edition",
+            "year": 2023,
+            "verify": false
+          },
+          "note": "OUP computing titles exist for lower secondary; per-grade alignment pending catalogue confirmation."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "note": "Pending publisher mapping."
+        }
+      ]
+    }
+  ]
+}

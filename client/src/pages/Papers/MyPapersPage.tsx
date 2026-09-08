@@ -1,188 +1,178 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { papersApi } from '../../api/papers';
-import { PaperListItem, PaperStatus } from '../../types';
-import { format } from 'date-fns';
+/**
+ * PHASE 2 — My Papers (v2).
+ *
+ * Server-paginated list of generated papers with status/scope filters,
+ * batch actions (duplicate / finalise / delete) and quick navigation into
+ * the paper detail page. Teachers only ever see their own papers (server
+ * enforced); admins see all papers here (teacher column shown).
+ *
+ * Route: /app/papers (preserved from Phase 1).
+ */
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { PageHeader, EmptyState, StatusBadge } from '../../components/ui';
-import {
-  FilePlus, Search, Eye, Download,
-  Trash2, FileText, Clock, Award,
-} from 'lucide-react';
 import clsx from 'clsx';
+import {
+  AlertTriangle, ArrowDown, ArrowUp, CheckCircle2, Copy, Eye, FileText,
+  Filter, Loader2, Search, Trash2,
+} from 'lucide-react';
+import { useAppSelector } from '../../store/hooks';
+import { v2 } from '../../api/v2';
+import { EmptyState, PageHeader, Skeleton } from '../../components/ui';
+import type { PaperSummaryV2 } from '../../types';
+import { fmtDate } from './generate/state';
 
-const STATUS_TABS: { label: string; value: PaperStatus | '' }[] = [
-  { label: 'All', value: '' },
-  { label: 'Draft', value: 'draft' },
-  { label: 'Final', value: 'final' },
-  { label: 'Archived', value: 'archived' },
-];
+const STATUSES = ['draft', 'final', 'archived'] as const;
+const LIMIT = 12;
 
 export default function MyPapersPage() {
-  const [papers, setPapers] = useState<PaperListItem[]>([]);
+  const navigate = useNavigate();
+  const { user } = useAppSelector((s) => s.auth);
+  const isAdmin = user?.role !== 'teacher';
+
+  const [rows, setRows] = useState<PaperSummaryV2[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PaperStatus | ''>('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [deleting, setDeleting] = useState<number | null>(null);
+  const [status, setStatus] = useState<string>('');
+  const [courseId, setCourseId] = useState<number | undefined>();
+  const [classId, setClassId] = useState<number | undefined>();
+  const [courses, setCourses] = useState<Array<{ id: number; name: string }>>([]);
+  const [classes, setClasses] = useState<Array<{ id: number; name: string }>>([]);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const loadPapers = useCallback(async () => {
+  const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: 12 };
-      if (statusFilter) params.status = statusFilter;
-      const res = await papersApi.list(params);
-      setPapers(res.data.data);
-      setTotalPages(res.data.pagination.totalPages);
-    } catch {
-      toast.error('Failed to load papers');
+      const res = await v2.papers.list({
+        page, limit: LIMIT, status: status || undefined,
+        courseId, classId, search: search.trim() || undefined,
+      });
+      const d = res.data as any;
+      setRows(d.data);
+      setTotal(d.pagination?.total ?? 0);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to load papers');
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page, status, courseId, classId, search]);
 
-  useEffect(() => { loadPapers(); }, [loadPapers]);
+  useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  const handleDelete = async (id: number, title: string) => {
-    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    setDeleting(id);
-    try {
-      await papersApi.delete(id);
-      toast.success('Paper deleted');
-      loadPapers();
-    } catch {
-      toast.error('Failed to delete paper');
-    } finally {
-      setDeleting(null);
-    }
+  // catalog filters for admin scope browsers
+  useEffect(() => {
+    v2.catalog.courses().then((r) => setCourses(r.data.data.map((c) => ({ id: c.id, name: `${c.code} — ${c.name}` })))).catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (!courseId) { setClasses([]); setClassId(undefined); return; }
+    v2.catalog.courseClasses(courseId).then((r) => setClasses(r.data.data.map((c: any) => ({ id: c.id, name: c.name })))).catch(() => setClasses([]));
+  }, [courseId]);
+
+  const pages = Math.max(1, Math.ceil(total / LIMIT));
+
+  const onSort = () => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+
+  const act = async (fn: () => Promise<any>, ok: string, id: number) => {
+    setBusyId(id);
+    try { await fn(); toast.success(ok); fetchRows(); }
+    catch (e: any) { toast.error(e?.message || 'Action failed'); }
+    finally { setBusyId(null); }
   };
 
-  const handleDownload = (id: number) => {
-    window.open(papersApi.getDownloadUrl(id), '_blank');
-  };
-
-  const filtered = papers.filter(p =>
-    !search || p.title.toLowerCase().includes(search.toLowerCase()) ||
-    p.class.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.paperSubjects.some(ps => ps.subject.name.toLowerCase().includes(search.toLowerCase()))
-  );
+  const sorted = [...rows].sort((a, b) => (sortDir === 'desc' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)));
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-6">
       <PageHeader
-        title="My Papers"
-        description={`${papers.length} paper${papers.length !== 1 ? 's' : ''} total`}
-        action={
-          <Link to="/app/papers/generate" className="btn-primary">
-            <FilePlus className="w-4 h-4" /> Generate New Paper
-          </Link>
-        }
+        title={isAdmin ? 'Papers (all users)' : 'My Papers'}
+        description={`${total} paper${total === 1 ? '' : 's'} · drafts, finals and archived copies.`}
+        action={<button className="btn-primary" onClick={() => navigate('/app/papers/generate')}><FileText className="w-4 h-4" /> Generate new</button>}
       />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-          <input
-            className="input pl-11"
-            placeholder="Search papers by title, class, or subject..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      {/* filters */}
+      <div className="card p-3 mb-4 flex flex-wrap items-center gap-2">
+        <Filter className="w-4 h-4 text-surface-400" />
+        <div className="relative">
+          <Search className="w-4 h-4 text-surface-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input className="input pl-9 w-56" placeholder="Search by title…" value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         </div>
-        <div className="flex gap-1 bg-surface-100 rounded-xl p-1">
-          {STATUS_TABS.map(tab => (
-            <button
-              key={tab.value}
-              onClick={() => { setStatusFilter(tab.value); setPage(1); }}
-              className={clsx(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                statusFilter === tab.value
-                  ? 'bg-white text-surface-900 shadow-sm'
-                  : 'text-surface-500 hover:text-surface-700'
-              )}
-            >
-              {tab.label}
+        <div className="flex items-center gap-1.5">
+          {STATUSES.map((s) => (
+            <button key={s} type="button"
+              onClick={() => { setStatus(status === s ? '' : s); setPage(1); }}
+              className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border transition-all',
+                status === s ? 'bg-surface-800 text-white border-surface-800' : 'bg-white border-surface-200 text-surface-500 hover:border-surface-400')}>
+              {s}
             </button>
           ))}
         </div>
+        <select className="select w-56" value={courseId ?? ''}
+          onChange={(e) => { setCourseId(e.target.value ? Number(e.target.value) : undefined); setPage(1); }}>
+          <option value="">All courses</option>
+          {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <select className="select w-44" value={classId ?? ''} disabled={!courseId}
+          onChange={(e) => { setClassId(e.target.value ? Number(e.target.value) : undefined); setPage(1); }}>
+          <option value="">All classes</option>
+          {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <span className="ml-auto text-xs text-surface-400">Sort by created</span>
+        <button className="btn-ghost btn-sm" onClick={onSort}>
+          {sortDir === 'desc' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />} newest {sortDir === 'desc' ? 'first' : 'last'}
+        </button>
       </div>
 
-      {/* Papers Grid */}
+      {/* list */}
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card p-5 space-y-3 animate-pulse">
-              <div className="h-4 bg-surface-200 rounded w-3/4" />
-              <div className="h-3 bg-surface-100 rounded w-1/2" />
-              <div className="h-3 bg-surface-100 rounded w-2/3" />
-              <div className="flex gap-2 pt-2">
-                <div className="h-8 bg-surface-100 rounded flex-1" />
-                <div className="h-8 bg-surface-100 rounded flex-1" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title={search ? 'No papers match your search' : 'No papers yet'}
-          description={search ? 'Try a different search term' : "You haven't generated any papers. Create your first paper in less than 2 minutes."}
-          action={
-            !search ? (
-              <Link to="/app/papers/generate" className="btn-primary">
-                <FilePlus className="w-4 h-4" /> Generate Paper
-              </Link>
-            ) : undefined
-          }
-        />
+        <div className="grid md:grid-cols-2 gap-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
+      ) : sorted.length === 0 ? (
+        <EmptyState icon={FileText} title="No papers found"
+          description={search || status || courseId ? 'Try relaxing the filters.' : 'Generate your first paper from the wizard.'}
+          action={<button className="btn-primary" onClick={() => navigate('/app/papers/generate')}><FileText className="w-4 h-4" /> Generate paper</button>} />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(paper => (
-            <div key={paper.id} className="card flex flex-col hover:shadow-lg transition-all group">
-              <div className="p-5 flex-1">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <StatusBadge status={paper.status} />
-                  <span className="text-xs text-surface-400">{format(new Date(paper.createdAt), 'dd MMM yyyy')}</span>
-                </div>
-
-                <h3 className="font-semibold text-surface-900 text-sm leading-snug mb-1.5 line-clamp-2 group-hover:text-brand-700 transition-colors">
-                  {paper.title}
-                </h3>
-                <p className="text-xs text-surface-500 mb-3">
-                  {paper.class.name} · {paper.paperSubjects.map(ps => ps.subject.name).join(', ')}
-                </p>
-
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-50 rounded-full text-xs text-surface-600 font-medium">
-                    <Award className="w-3 h-3" />{paper.totalMarks} marks
+        <div className="space-y-2.5">
+          {sorted.map((p) => (
+            <div key={p.id} className={clsx('card p-4 flex flex-wrap items-center gap-3 transition-all hover:shadow-md')}>
+              <button className="flex items-center gap-3 flex-1 min-w-[260px] text-left" onClick={() => navigate(`/app/papers/${p.id}`)}>
+                <span className={clsx('w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0',
+                  p.status === 'final' ? 'bg-emerald-100 text-emerald-600' : p.status === 'archived' ? 'bg-surface-200 text-surface-500' : 'bg-brand-50 text-brand-600')}>
+                  <FileText className="w-5 h-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold text-surface-900 truncate">{p.title}</span>
+                  <span className="block text-xs text-surface-500">
+                    {p.examTitle ? `${p.examTitle} · ` : ''}{p.className}{p.courseCode ? ` · ${p.courseCode}` : ''} · {(p.subjects ?? []).map((s) => s.name).join(', ') || '—'}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-50 rounded-full text-xs text-surface-600 font-medium">
-                    <Clock className="w-3 h-3" />{paper.timeLimit} min
+                  <span className="block text-[11px] text-surface-400 mt-0.5">
+                    {p.questionCount} questions · {p.totalMarks} marks · {p.medium} · {fmtDate(p.createdAt)}
+                    {isAdmin && p.teacherName ? ` · ${p.teacherName}` : ''}
                   </span>
-                  {paper.paperSettings && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-50 rounded-full text-xs text-surface-600 font-medium">
-                      <FileText className="w-3 h-3" />
-                      {paper.paperSettings.mcqCount + paper.paperSettings.shortCount + paper.paperSettings.essayCount} Qs
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="px-5 py-3.5 border-t border-surface-100 flex gap-2">
-                <Link to={`/papers/${paper.id}`} className="btn-secondary flex-1 btn-sm">
-                  <Eye className="w-3.5 h-3.5" /> View
-                </Link>
-                <button onClick={() => handleDownload(paper.id)} className="btn-primary flex-1 btn-sm">
-                  <Download className="w-3.5 h-3.5" /> PDF
+                </span>
+              </button>
+              <span className={clsx('text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full',
+                p.status === 'final' ? 'bg-emerald-100 text-emerald-700' : p.status === 'archived' ? 'bg-surface-100 text-surface-500' : 'bg-amber-100 text-amber-700')}>
+                {p.status}
+              </span>
+              <span className="badge badge-gray hidden md:inline-flex">{p.paperType}</span>
+              <div className="flex items-center gap-1.5 no-print">
+                <button className="btn-ghost btn-icon" title="Open" onClick={() => navigate(`/app/papers/${p.id}`)}><Eye className="w-4 h-4" /></button>
+                <button className="btn-ghost btn-icon" title="Duplicate as draft" disabled={busyId === p.id}
+                  onClick={() => act(() => v2.papers.duplicate(p.id), 'Duplicated as draft', p.id)}>
+                  {busyId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                 </button>
-                <button
-                  onClick={() => handleDelete(paper.id, paper.title)}
-                  disabled={deleting === paper.id}
-                  className="btn-ghost text-red-500 hover:bg-red-50 btn-sm px-2.5"
-                >
-                  {deleting === paper.id ? <span className="spinner-sm" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {p.status !== 'final' && (
+                  <button className="btn-ghost btn-icon text-emerald-600" title="Mark as final" disabled={busyId === p.id}
+                    onClick={() => act(() => v2.papers.update(p.id, { status: 'final' }), 'Marked as final', p.id)}>
+                    {busyId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  </button>
+                )}
+                <button className="btn-ghost btn-icon text-rose-500" title="Delete"
+                  onClick={() => { if (window.confirm(`Delete paper “${p.title}”?`)) act(() => v2.papers.remove(p.id), 'Paper deleted', p.id); }}>
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -190,17 +180,17 @@ export default function MyPapersPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary btn-sm">
-            Previous
-          </button>
-          <span className="text-sm text-surface-600 font-medium">Page {page} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-secondary btn-sm">
-            Next
-          </button>
+      {/* pagination */}
+      {pages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-5">
+          <button className="btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
+          <span className="text-xs font-bold text-surface-500">Page {page} / {pages}</span>
+          <button className="btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))}>Next</button>
         </div>
+      )}
+
+      {total > 0 && page > pages && (
+        <p className="text-xs text-amber-600 flex items-center justify-center gap-1 mt-3"><AlertTriangle className="w-3.5 h-3.5" /> Page out of range — resetting to page {pages}.</p>
       )}
     </div>
   );

@@ -1,0 +1,581 @@
+{
+  "_comment": "Federal Board (FBISE) catalog. Federal/federal-government schools follow National Book Foundation (NBF) model textbooks on the SNC/NCP. Book rows are NBF titles per class/subject; chapter data is preloaded only where a real list was found (Physics 9 NBF 2025, NCP 2022-23) and is seeded verified=false until confirmed on an official NBF copy.",
+  "courseCode": "FBISE",
+  "defaults": {
+    "publisher": "National Book Foundation (NBF)",
+    "session": "2026-27",
+    "source": "s13"
+  },
+  "classes": [
+    {
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "notes": "SNC primary (NBF model textbooks): Urdu, English, Mathematics, General Knowledge, Islamiyat, Nazra Quran (Nazra rows per FG-school inventory).",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "General Knowledge",
+          "medium": "urdu",
+          "book": {
+            "title": "General Knowledge {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Nazra Quran",
+          "medium": "urdu",
+          "book": {
+            "title": "Nazra Quran {g}",
+            "edition": "NBF Edition",
+            "year": 2024,
+            "verify": false
+          },
+          "note": "Listed in FG/NBF class inventories; confirm current title."
+        }
+      ]
+    },
+    {
+      "grades": [
+        4,
+        5
+      ],
+      "notes": "SNC primary (NBF): General Science and Social Studies from Class 4.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "General Science {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Social Studies (UM) {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "English-medium edition published separately."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        }
+      ]
+    },
+    {
+      "grades": [
+        6,
+        7,
+        8
+      ],
+      "notes": "NBF middle-school textbooks (SNC). Optional subjects per FG school scheme pending confirmation.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "General Science {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Social Studies (UM) {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": false
+          },
+          "note": "Title/medium per FG inventory; confirm current edition."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "NBF SNC Edition",
+            "year": 2024,
+            "verify": false
+          }
+        }
+      ]
+    },
+    {
+      "grade": 9,
+      "notes": "SSC Part-I (FBISE). Subject set per FBISE model-paper scheme (English & Urdu compulsory; science/math group; Pak Studies; Islamiyat).",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English (Compulsory) 9",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "FBISE English Compulsory-I."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu (Compulsory) 9",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "FBISE Urdu Compulsory-I."
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics 9",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification from the authorized copy."
+        },
+        {
+          "name": "Physics",
+          "medium": "em",
+          "book": {
+            "title": "Physics 9",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "Physical Quantities and Measurement"
+            },
+            {
+              "n": 2,
+              "name": "Kinematics"
+            },
+            {
+              "n": 3,
+              "name": "Dynamics - I"
+            },
+            {
+              "n": 4,
+              "name": "Dynamics - II"
+            },
+            {
+              "n": 5,
+              "name": "Pressure and Deformation in Solids"
+            },
+            {
+              "n": 6,
+              "name": "Work and Energy"
+            },
+            {
+              "n": 7,
+              "name": "Density and Temperature"
+            },
+            {
+              "n": 8,
+              "name": "Magnetism"
+            },
+            {
+              "n": 9,
+              "name": "Nature of Science and Physics"
+            }
+          ],
+          "chapterSource": "s6"
+        },
+        {
+          "name": "Chemistry",
+          "medium": "em",
+          "book": {
+            "title": "Chemistry 9",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Biology",
+          "medium": "em",
+          "book": {
+            "title": "Biology 9",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Computer Science 9",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Pakistan Studies",
+          "medium": "em",
+          "book": {
+            "title": "Pakistan Studies 9",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat 9",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        }
+      ]
+    },
+    {
+      "grade": 10,
+      "notes": "SSC Part-II (FBISE). Same subject scheme as Class 9.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English (Compulsory) 10",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu (Compulsory) 10",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics 10",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Physics",
+          "medium": "em",
+          "book": {
+            "title": "Physics 10",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Chemistry",
+          "medium": "em",
+          "book": {
+            "title": "Chemistry 10",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Biology",
+          "medium": "em",
+          "book": {
+            "title": "Biology 10",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Computer Science 10",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Pakistan Studies",
+          "medium": "em",
+          "book": {
+            "title": "Pakistan Studies 10",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat 10",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        }
+      ]
+    },
+    {
+      "grades": [
+        11,
+        12
+      ],
+      "notes": "HSSC (FBISE). NBF textbooks; subject scheme per FBISE model-paper lists. Additional group electives (arts/humanities/statistics/economics etc.) pending per-stream verification.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English (Compulsory) {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu (Compulsory) {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Physics",
+          "medium": "em",
+          "book": {
+            "title": "Physics {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Chemistry",
+          "medium": "em",
+          "book": {
+            "title": "Chemistry {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Biology",
+          "medium": "em",
+          "book": {
+            "title": "Biology {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Computer Science {g}",
+            "edition": "NBF Edition (NCP 2022-23)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamic Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamic Studies {g}",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Offering per HSSC scheme; confirm current title."
+        },
+        {
+          "name": "Pakistan Studies",
+          "medium": "em",
+          "book": {
+            "title": "Pakistan Studies {g}",
+            "edition": "NBF Edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Offering per HSSC scheme; confirm current title."
+        }
+      ]
+    }
+  ]
+}

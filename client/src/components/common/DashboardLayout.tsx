@@ -6,33 +6,46 @@ import { authApi } from '../../api/auth';
 import toast from 'react-hot-toast';
 import { Avatar } from '../ui';
 import {
-  LayoutDashboard, FilePlus, Files, Database,
+  LayoutDashboard, FilePlus, Files, FileStack, Sparkles, Database,
   Users, ClipboardList, User, LogOut, Menu, X,
   BookOpen, ChevronDown, Search, Bell,
-  BarChart3, School, Library,
+  BarChart3, School, Library, LayoutTemplate,
 } from 'lucide-react';
 import clsx from 'clsx';
 
-const getNavItems = (role: string) => {
-  const all = [
+type NavItem = { label: string; href: string; icon: any; roles: string[]; perm?: string };
+const ALL_PERMS = ['users', 'schools', 'courses', 'books', 'syllabus', 'questionBank', 'paperGeneration', 'generatedPapers', 'analytics', 'settings', 'audit'];
+
+const getNavItems = (user: { role?: string; permissions?: string[] }) => {
+  const role = user?.role || 'teacher';
+  const perms = user?.permissions ?? [];
+  const has = (perm?: string) => {
+    if (!perm) return true;                     // core items: everyone
+    if (role === 'super_admin') return true;    // super admin: every module
+    return perms.includes(perm);                // school admin: module permission only
+  };
+  const all: NavItem[] = [
     { label: 'Dashboard',      href: '/app/dashboard',       icon: LayoutDashboard, roles: ['super_admin','school_admin','teacher'] },
     { label: 'Generate Paper', href: '/app/papers/generate', icon: FilePlus,         roles: ['super_admin','school_admin','teacher'] },
     { label: 'My Papers',      href: '/app/papers',           icon: Files,            roles: ['super_admin','school_admin','teacher'] },
+    { label: 'Patterns',       href: '/app/patterns',         icon: Sparkles,         roles: ['super_admin','school_admin','teacher'] },
     { label: 'Question Bank',  href: '/app/questions',        icon: Database,         roles: ['super_admin','school_admin','teacher'] },
   ];
-  const admin = [
-    { label: 'Manage Users',   href: '/app/admin/users',      icon: Users,            roles: ['super_admin','school_admin'] },
-    { label: 'Schools',        href: '/app/admin/schools',    icon: School,           roles: ['super_admin','school_admin'] },
-    { label: 'Syllabus',       href: '/app/admin/syllabus',   icon: Library,          roles: ['super_admin','school_admin'] },
-    { label: 'Analytics',      href: '/app/admin/analytics',  icon: BarChart3,        roles: ['super_admin','school_admin'] },
-    { label: 'Audit Logs',     href: '/app/admin/audit',      icon: ClipboardList,    roles: ['super_admin'] },
+  const admin: NavItem[] = [
+    { label: 'Manage Users',   href: '/app/admin/users',      icon: Users,            roles: ['super_admin','school_admin'], perm: 'users' },
+    { label: 'Schools',        href: '/app/admin/schools',    icon: School,           roles: ['super_admin','school_admin'], perm: 'schools' },
+    { label: 'Syllabus',       href: '/app/admin/syllabus',   icon: Library,          roles: ['super_admin','school_admin'], perm: 'syllabus' },
+    { label: 'Templates',      href: '/app/admin/templates',  icon: LayoutTemplate,   roles: ['super_admin','school_admin'], perm: 'settings' },
+    { label: 'Papers (All)',   href: '/app/admin/papers',     icon: FileStack,        roles: ['super_admin','school_admin'], perm: 'generatedPapers' },
+    { label: 'Analytics',      href: '/app/admin/analytics',  icon: BarChart3,        roles: ['super_admin','school_admin'], perm: 'analytics' },
+    { label: 'Audit Logs',     href: '/app/admin/audit',      icon: ClipboardList,    roles: ['super_admin','school_admin'], perm: 'audit' },
   ];
-  const bottom = [
+  const bottom: NavItem[] = [
     { label: 'Profile',        href: '/app/profile',          icon: User,             roles: ['super_admin','school_admin','teacher'] },
   ];
   const items = [...all];
-  if (['super_admin', 'school_admin'].includes(role)) items.push(...admin);
-  return { main: items.filter(n => n.roles.includes(role)), bottom: bottom.filter(n => n.roles.includes(role)) };
+  if (role === 'school_admin' || role === 'super_admin') items.push(...admin.filter((n) => has(n.perm)));
+  return { main: items.filter((n) => n.roles.includes(role) && has(n.perm)), bottom: bottom.filter((n) => n.roles.includes(role)) };
 };
 
 export default function DashboardLayout() {
@@ -43,7 +56,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const { main, bottom } = getNavItems(user?.role || 'teacher');
+  const { main, bottom } = getNavItems({ role: user?.role, permissions: user?.permissions });
 
   const handleLogout = async () => {
     try { await authApi.logout(); } catch {}
@@ -206,6 +219,22 @@ function SidebarContent({ main, bottom, onLogout, onClose }: {
             <span>{item.label}</span>
           </NavLink>
         ))}
+        {main.some((i) => i.perm) && (
+          <>
+            <p className="px-3 pt-4 text-[11px] font-semibold text-surface-400 uppercase tracking-wider mb-2">Administration</p>
+            {main.filter((i) => i.perm).map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                onClick={onClose}
+                className={({ isActive }) => clsx('sidebar-link', isActive && 'active')}
+              >
+                <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
 
       {/* Bottom section */}

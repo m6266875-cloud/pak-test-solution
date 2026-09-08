@@ -10,8 +10,14 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts",
+    "db:catalog": "ts-node --transpile-only prisma/catalog/seed.ts",
+    "db:catalog:validate": "ts-node --transpile-only prisma/catalog/seed.ts --validate",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force && npm run db:seed"
+    "db:reset": "prisma migrate reset --force && npm run db:seed",
+    "db:migrate:local": "node scripts/apply-migrations.js",
+    "test:phase2:questions": "ts-node --transpile-only scripts/phase2-questionbank.test.ts",
+    "test:phase2:generator": "ts-node --transpile-only scripts/phase2-generator.test.ts",
+    "test:phase2": "npm run test:phase2:questions && npm run test:phase2:generator"
   },
   "dependencies": {
     "@prisma/client": "^5.7.0",
@@ -42,6 +48,8 @@
     "@types/multer": "^1.4.11",
     "@types/node": "^20.10.0",
     "@types/uuid": "^9.0.7",
+    "pg": "^8.11.3",
+    "@types/pg": "^8.11.5",
     "prisma": "^5.7.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

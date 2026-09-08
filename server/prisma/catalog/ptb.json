@@ -1,0 +1,941 @@
+{
+  "_comment": "PTB/PCTB Punjab textbook catalog. Grades 1-12. New 9th-class books (2025-26) and new 10th-class books (2026-27) carry HARVESTED chapter/unit lists (verified=false — awaiting confirmation on an official PCTB copy). All other rows are book-level (chapters pending authorized copies). medium: em/um/urdu; verify: false rows await primary-source confirmation.",
+  "courseCode": "PTB",
+  "defaults": {
+    "publisher": "Punjab Curriculum & Textbook Board (PCTB)",
+    "session": "2026-27",
+    "source": "s1"
+  },
+  "classes": [
+    {
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "notes": "SNC primary: Urdu, English, Mathematics, Islamiyat, General Knowledge (Urdu medium); annual PCTB reprints each session.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "General Knowledge",
+          "medium": "urdu",
+          "book": {
+            "title": "General Knowledge {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Waqfiat-e-Aama (Urdu medium) at primary level."
+        }
+      ]
+    },
+    {
+      "grades": [
+        4,
+        5
+      ],
+      "notes": "SNC primary: General Science and Social Studies replace General Knowledge from Class 4.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "General Science {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Social Studies {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Urdu medium (Masharti Uloom); English-medium edition exists for EM schools."
+        }
+      ]
+    },
+    {
+      "grades": [
+        6,
+        7,
+        8
+      ],
+      "notes": "SNC middle: Urdu, English, Mathematics, General Science, Islamiyat, Social Studies. Optional/elective subjects (e.g. Computer Education) mapping pending confirmation.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "General Science {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Social Studies {g}",
+            "edition": "SNC Edition (2025-26 reprint)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Urdu medium; English-medium edition available."
+        }
+      ]
+    },
+    {
+      "grade": 9,
+      "notes": "New PCTB Class 9 books (2025 curriculum, first used session 2025-26; in force 2026-27). Urdu-medium science editions follow the same curriculum — chapter lists pending verification against UM copies.",
+      "subjects": [
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "Real Numbers"
+            },
+            {
+              "n": 2,
+              "name": "Logarithms"
+            },
+            {
+              "n": 3,
+              "name": "Set and Functions"
+            },
+            {
+              "n": 4,
+              "name": "Factorization and Algebraic Manipulation"
+            },
+            {
+              "n": 5,
+              "name": "Linear Equations and Inequalities"
+            },
+            {
+              "n": 6,
+              "name": "Trigonometry"
+            },
+            {
+              "n": 7,
+              "name": "Coordinate Geometry"
+            },
+            {
+              "n": 8,
+              "name": "Logic"
+            },
+            {
+              "n": 9,
+              "name": "Similar Figures"
+            },
+            {
+              "n": 10,
+              "name": "Graphs of Functions"
+            },
+            {
+              "n": 11,
+              "name": "Loci and Construction"
+            },
+            {
+              "n": 12,
+              "name": "Information Handling"
+            },
+            {
+              "n": 13,
+              "name": "Probability"
+            }
+          ],
+          "chapterSource": "s2"
+        },
+        {
+          "name": "Mathematics",
+          "medium": "urdu",
+          "book": {
+            "title": "Mathematics 9 (Urdu Medium)",
+            "edition": "New Edition 2025",
+            "year": 2025,
+            "verify": false
+          },
+          "chapterMirrorOf": "Mathematics/em"
+        },
+        {
+          "name": "Physics",
+          "medium": "em",
+          "book": {
+            "title": "Physics 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "Physical Quantities and Measurements"
+            },
+            {
+              "n": 2,
+              "name": "Kinematics"
+            },
+            {
+              "n": 3,
+              "name": "Dynamics"
+            },
+            {
+              "n": 4,
+              "name": "Turning Effects of Force"
+            },
+            {
+              "n": 5,
+              "name": "Work, Energy and Power"
+            },
+            {
+              "n": 6,
+              "name": "Mechanical Properties of Matter"
+            },
+            {
+              "n": 7,
+              "name": "Thermal Properties of Matter"
+            },
+            {
+              "n": 8,
+              "name": "Magnetism"
+            },
+            {
+              "n": 9,
+              "name": "Nature of Science"
+            }
+          ],
+          "chapterSource": "s4"
+        },
+        {
+          "name": "Physics",
+          "medium": "urdu",
+          "book": {
+            "title": "Physics 9 (Urdu Medium)",
+            "edition": "New Edition 2025",
+            "year": 2025,
+            "verify": false
+          },
+          "chapterMirrorOf": "Physics/em"
+        },
+        {
+          "name": "Chemistry",
+          "medium": "em",
+          "book": {
+            "title": "Chemistry 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "States of Matter and Phase Changes"
+            },
+            {
+              "n": 2,
+              "name": "Atomic Structure"
+            },
+            {
+              "n": 3,
+              "name": "Chemical Bonding"
+            },
+            {
+              "n": 4,
+              "name": "Stoichiometry"
+            },
+            {
+              "n": 5,
+              "name": "Energetics"
+            },
+            {
+              "n": 6,
+              "name": "Equilibria"
+            },
+            {
+              "n": 7,
+              "name": "Acid Base Chemistry"
+            },
+            {
+              "n": 8,
+              "name": "Periodic Table and Periodicity"
+            },
+            {
+              "n": 9,
+              "name": "Group Properties and Elements"
+            },
+            {
+              "n": 10,
+              "name": "Environmental Chemistry"
+            },
+            {
+              "n": 11,
+              "name": "Hydrocarbons"
+            },
+            {
+              "n": 12,
+              "name": "Empirical Data Collection and Analysis"
+            },
+            {
+              "n": 13,
+              "name": "Laboratory and Practical Skills"
+            }
+          ],
+          "chapterSource": "s4"
+        },
+        {
+          "name": "Chemistry",
+          "medium": "urdu",
+          "book": {
+            "title": "Chemistry 9 (Urdu Medium)",
+            "edition": "New Edition 2025",
+            "year": 2025,
+            "verify": false
+          },
+          "chapterMirrorOf": "Chemistry/em"
+        },
+        {
+          "name": "Biology",
+          "medium": "em",
+          "book": {
+            "title": "Biology 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "The Science of Biology"
+            },
+            {
+              "n": 2,
+              "name": "Biodiversity"
+            },
+            {
+              "n": 3,
+              "name": "The Cell"
+            },
+            {
+              "n": 4,
+              "name": "Cell Cycle"
+            },
+            {
+              "n": 5,
+              "name": "Tissues, Organs and Organ Systems"
+            },
+            {
+              "n": 6,
+              "name": "Biomolecules"
+            },
+            {
+              "n": 7,
+              "name": "Enzymes"
+            },
+            {
+              "n": 8,
+              "name": "Bioenergetics"
+            },
+            {
+              "n": 9,
+              "name": "Plant Physiology"
+            },
+            {
+              "n": 10,
+              "name": "Reproduction in Plants"
+            },
+            {
+              "n": 11,
+              "name": "Biostatistics"
+            }
+          ],
+          "chapterSource": "s5"
+        },
+        {
+          "name": "Biology",
+          "medium": "urdu",
+          "book": {
+            "title": "Biology 9 (Urdu Medium)",
+            "edition": "New Edition 2025",
+            "year": 2025,
+            "verify": false
+          },
+          "chapterMirrorOf": "Biology/em"
+        },
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "The Saviour of Mankind"
+            },
+            {
+              "n": 2,
+              "name": "Patriotism"
+            },
+            {
+              "n": 3,
+              "name": "Daffodils (Poem)"
+            },
+            {
+              "n": 4,
+              "name": "Hazrat Asma (R.A)"
+            },
+            {
+              "n": 5,
+              "name": "Women Empowerment through Entrepreneurship"
+            },
+            {
+              "n": 6,
+              "name": "The Value of Time"
+            },
+            {
+              "n": 7,
+              "name": "If (Poem)"
+            },
+            {
+              "n": 8,
+              "name": "The Impact of Globalisation on Culture and Economy"
+            },
+            {
+              "n": 9,
+              "name": "Quality Education: A Key to Success"
+            },
+            {
+              "n": 10,
+              "name": "The Silent Predator and the Majestic Prey - Snow Leopard and Markhor"
+            },
+            {
+              "n": 11,
+              "name": "The Dear Departed (Play)"
+            }
+          ],
+          "chapterSource": "s5"
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter/lesson list pending verification from the authorized Urdu copy."
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Computer Science 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification from the authorized copy."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Compulsory subject; chapter list pending verification."
+        },
+        {
+          "name": "Tarjuma-tul-Quran",
+          "medium": "urdu",
+          "book": {
+            "title": "Tarjuma-tul-Quran 9",
+            "edition": "2025",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Listed for 9th class (Punjab scheme); confirm mapping on PCTB portal."
+        },
+        {
+          "name": "Pakistan Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Pakistan Studies 9",
+            "edition": "New Edition 2025 (session 2025-26 onwards)",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Chapter list pending verification from the authorized copy."
+        }
+      ]
+    },
+    {
+      "grade": 10,
+      "notes": "New PCTB Class 10 books introduced for session 2026-27 (new curriculum, second matric year).",
+      "subjects": [
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 1,
+              "name": "Complex Numbers"
+            },
+            {
+              "n": 2,
+              "name": "Quadratic Equations and Inequalities"
+            },
+            {
+              "n": 3,
+              "name": "Matrices and Determinants"
+            },
+            {
+              "n": 4,
+              "name": "Functions and Graphs"
+            },
+            {
+              "n": 5,
+              "name": "Algebraic Fractions"
+            },
+            {
+              "n": 6,
+              "name": "Vectors in Plane"
+            },
+            {
+              "n": 7,
+              "name": "Trigonometry"
+            },
+            {
+              "n": 8,
+              "name": "Chords and Arcs of a Circle"
+            },
+            {
+              "n": 9,
+              "name": "Tangent and Angles of a Circle"
+            },
+            {
+              "n": 10,
+              "name": "Practical Geometry of Circles"
+            },
+            {
+              "n": 11,
+              "name": "Information Handling"
+            },
+            {
+              "n": 12,
+              "name": "Probability"
+            }
+          ],
+          "chapterSource": "s3"
+        },
+        {
+          "name": "Mathematics",
+          "medium": "urdu",
+          "book": {
+            "title": "Mathematics 10 (Urdu Medium)",
+            "edition": "New Edition 2026",
+            "year": 2026,
+            "verify": false
+          },
+          "chapterMirrorOf": "Mathematics/em"
+        },
+        {
+          "name": "Physics",
+          "medium": "em",
+          "book": {
+            "title": "Physics 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "chapters": [
+            {
+              "n": 10,
+              "name": "Thermal Physics"
+            },
+            {
+              "n": 11,
+              "name": "Transfer of Thermal Energy"
+            },
+            {
+              "n": 12,
+              "name": "Waves"
+            },
+            {
+              "n": 13,
+              "name": "Sound"
+            },
+            {
+              "n": 14,
+              "name": "Light"
+            },
+            {
+              "n": 15,
+              "name": "Electrostatics"
+            },
+            {
+              "n": 16,
+              "name": "Electricity"
+            },
+            {
+              "n": 17,
+              "name": "Electromagnetism"
+            },
+            {
+              "n": 18,
+              "name": "Electromagnetic Induction and Electromagnetic Waves"
+            },
+            {
+              "n": 19,
+              "name": "Electronics"
+            },
+            {
+              "n": 20,
+              "name": "Atomic and Nuclear Physics"
+            },
+            {
+              "n": 21,
+              "name": "Space and Environment"
+            }
+          ],
+          "chapterSource": "s3"
+        },
+        {
+          "name": "Physics",
+          "medium": "urdu",
+          "book": {
+            "title": "Physics 10 (Urdu Medium)",
+            "edition": "New Edition 2026",
+            "year": 2026,
+            "verify": false
+          },
+          "chapterMirrorOf": "Physics/em"
+        },
+        {
+          "name": "Chemistry",
+          "medium": "em",
+          "book": {
+            "title": "Chemistry 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter list pending verification from the authorized copy (secondary sources report 13 chapters)."
+        },
+        {
+          "name": "Chemistry",
+          "medium": "urdu",
+          "book": {
+            "title": "Chemistry 10 (Urdu Medium)",
+            "edition": "New Edition 2026",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter data pending."
+        },
+        {
+          "name": "Biology",
+          "medium": "em",
+          "book": {
+            "title": "Biology 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter list pending verification from the authorized copy (secondary sources report ~10 chapters)."
+        },
+        {
+          "name": "Biology",
+          "medium": "urdu",
+          "book": {
+            "title": "Biology 10 (Urdu Medium)",
+            "edition": "New Edition 2026",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter data pending."
+        },
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Unit list pending verification from the authorized copy."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Computer Science 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        },
+        {
+          "name": "Pakistan Studies",
+          "medium": "urdu",
+          "book": {
+            "title": "Pakistan Studies 10",
+            "edition": "New Edition 2026 (session 2026-27)",
+            "year": 2026,
+            "verify": false
+          },
+          "note": "Chapter list pending verification."
+        }
+      ]
+    },
+    {
+      "grades": [
+        11,
+        12
+      ],
+      "notes": "Intermediate (FSc/ICS/FA) textbooks are published by PCTB for Punjab colleges. Subject rows below are the mainstream science/computer groups; per-group elective mapping (arts/commerce streams, statistics, economics, etc.) pending scheme confirmation — treat as catalogue-level entries only.",
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "English {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Edition/session imprint pending confirmation."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Urdu {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          },
+          "note": "Optional for FSc science groups; verify per group scheme."
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Mathematics {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Physics",
+          "medium": "em",
+          "book": {
+            "title": "Physics {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Chemistry",
+          "medium": "em",
+          "book": {
+            "title": "Chemistry {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Biology",
+          "medium": "em",
+          "book": {
+            "title": "Biology {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          }
+        },
+        {
+          "name": "Computer Science",
+          "medium": "em",
+          "book": {
+            "title": "Computer Science {g}",
+            "edition": "Current PCTB intermediate edition",
+            "year": 2025,
+            "verify": false
+          }
+        }
+      ]
+    }
+  ]
+}
