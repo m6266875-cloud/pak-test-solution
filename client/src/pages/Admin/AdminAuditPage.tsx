@@ -1,108 +1,116 @@
-import { useState, useEffect, useCallback } from 'react';
-import { adminApi } from '../../api/admin';
-import { ActivityLog } from '../../types';
-import { format } from 'date-fns';
+/**
+ * PHASE 3 — Activity log (real /api/v3/audit).
+ *
+ * Server-side paginated + filtered list (user/action/entity/school/time).
+ * Schools admins only ever see their own school's log (enforced in SQL).
+ */
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PageHeader, Avatar } from '../../components/ui';
-import { ClipboardList, Search, RefreshCw } from 'lucide-react';
-import clsx from 'clsx';
+import { Clock, Loader2, RefreshCw, Search } from 'lucide-react';
+import { v3 } from '../../api/v3';
+import { EmptyState, PageHeader } from '../../components/ui';
+import type { AuditRowV3 } from '../../types';
 
-const ACTION_COLORS: Record<string, string> = {
-  login: 'badge-blue', logout: 'badge-gray', register: 'badge-green',
-  generate_paper: 'badge-purple', download_paper: 'badge-amber',
-  delete_paper: 'badge-red', create_user: 'badge-blue',
-  update_user: 'badge-blue', activate_user: 'badge-green',
-  deactivate_user: 'badge-amber', change_password: 'badge-purple',
+const ACTION_COLOR: Record<string, string> = {
+  'school.create': 'bg-emerald-100 text-emerald-700',
+  'user.teacher.create': 'bg-blue-100 text-blue-700',
+  'user.admin.create': 'bg-purple-100 text-purple-700',
+  'user.password-reset': 'bg-amber-100 text-amber-700',
+  'paper.generate': 'bg-indigo-100 text-indigo-700',
+  'paper.finalize': 'bg-emerald-100 text-emerald-700',
+  'paper.archive': 'bg-surface-200 text-surface-600',
+  'paper.download': 'bg-teal-100 text-teal-700',
+  'paper.duplicate': 'bg-cyan-100 text-cyan-700',
+  'paper.branding': 'bg-pink-100 text-pink-700',
 };
 
 export default function AdminAuditPage() {
-  const [logs, setLogs] = useState<ActivityLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [actionFilter, setActionFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [rows, setRows] = useState<AuditRowV3[]>([]);
+  const [actions, setActions] = useState<string[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [action, setAction] = useState('');
+  const [entity, setEntity] = useState('');
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const loadLogs = useCallback(async () => {
+  const fetchActions = useCallback(async () => {
+    try { const r = await v3.audit.actions(); setActions(r.data.data); } catch { /* optional */ }
+  }, []);
+
+  const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: 25 };
-      if (actionFilter) params.action = actionFilter;
-      const res = await adminApi.getAuditLogs(params);
-      setLogs(res.data.data); setTotal(res.data.pagination.total); setTotalPages(res.data.pagination.totalPages);
-    } catch { toast.error('Failed to load audit logs'); }
-    finally { setLoading(false); }
-  }, [page, actionFilter]);
+      const res = await v3.audit.list({ page, limit: 25, action, entity, search });
+      setRows(res.data.data.rows);
+      setTotal(res.data.data.total);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to load activity log');
+    } finally { setLoading(false); }
+  }, [page, action, entity, search]);
 
-  useEffect(() => { loadLogs(); }, [loadLogs]);
+  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => { fetchActions(); }, [fetchActions]);
 
-  const filtered = logs.filter(log =>
-    !search || log.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    log.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
-    log.action.includes(search.toLowerCase())
-  );
-
-  const actionLabel = (action: string) => action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const pages = Math.max(1, Math.ceil(total / 25));
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <PageHeader
-        title="Audit Logs"
-        description={`${total.toLocaleString()} events recorded`}
-        action={<button onClick={loadLogs} disabled={loading} className="btn-secondary"><RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} /> Refresh</button>}
-      />
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <PageHeader title="Activity Log" description={`${total} events · every admin/teacher action is recorded server-side`}
+        action={<button className="btn-ghost btn-sm" onClick={() => { setPage(1); fetchRows(); }}><RefreshCw className="w-4 h-4" /> Refresh</button>} />
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" /><input className="input pl-9" placeholder="Search by user or action..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <select className="select w-full sm:w-52" value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}>
-          <option value="">All Actions</option>
-          <option value="login">Login</option><option value="generate_paper">Generate Paper</option>
-          <option value="download_paper">Download Paper</option><option value="delete_paper">Delete Paper</option>
-          <option value="create_user">Create User</option><option value="change_password">Change Password</option>
+      <div className="card p-3 mb-4 grid sm:grid-cols-3 gap-2">
+        <div className="relative">
+          <Search className="w-4 h-4 text-surface-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input className="input pl-9" placeholder="Search entity/action/id…" value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+        </div>
+        <select className="select" value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }}>
+          <option value="">All actions</option>
+          {actions.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select className="select" value={entity} onChange={(e) => { setEntity(e.target.value); setPage(1); }}>
+          <option value="">All entities</option>
+          {['School', 'User', 'Paper', 'PaperTemplate', 'PaperPattern', 'Question'].map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-surface-50 border-b border-surface-200">
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">User</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Action</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600 hidden md:table-cell">Details</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-100">
-              {loading ? [...Array(8)].map((_, i) => <tr key={i}><td colSpan={4} className="px-4 py-3"><div className="h-4 bg-surface-100 rounded animate-pulse" /></td></tr>)
-              : filtered.length === 0 ? <tr><td colSpan={4} className="px-4 py-16 text-center text-surface-500"><ClipboardList className="w-10 h-10 text-surface-200 mx-auto mb-2" />No audit logs found</td></tr>
-              : filtered.map(log => (
-                <tr key={log.id} className="hover:bg-surface-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <Avatar name={log.user?.name || '?'} size="sm" />
-                      <div><div className="font-medium text-surface-900">{log.user?.name || 'Unknown'}</div><div className="text-xs text-surface-500">{log.user?.email}</div></div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3"><span className={ACTION_COLORS[log.action] || 'badge-gray'}>{actionLabel(log.action)}</span></td>
-                  <td className="px-4 py-3 hidden md:table-cell text-xs text-surface-500 max-w-xs">{log.details ? <span className="font-mono bg-surface-50 px-2 py-0.5 rounded text-xs">{JSON.stringify(log.details).slice(0, 80)}{JSON.stringify(log.details).length > 80 ? '…' : ''}</span> : '—'}</td>
-                  <td className="px-4 py-3 text-xs text-surface-500 whitespace-nowrap">{format(new Date(log.createdAt), 'dd MMM yyyy')}<br /><span className="text-surface-400">{format(new Date(log.createdAt), 'HH:mm:ss')}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-surface-100 flex items-center justify-between">
-            <span className="text-sm text-surface-500">Page {page} of {totalPages}</span>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary btn-sm">Prev</button>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-secondary btn-sm">Next</button>
-            </div>
+      {loading ? (
+        <div className="card divide-y divide-surface-100">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-12 animate-pulse bg-surface-50" />)}</div>
+      ) : rows.length === 0 ? (
+        <EmptyState icon={Clock} title="No activity yet" description="Events appear here as schools/teachers/papers/questions are created, approved or downloaded." />
+      ) : (
+        <>
+          <div className="card divide-y divide-surface-100 overflow-hidden">
+            {rows.map((r) => (
+              <div key={r.id} className="px-4 py-3 flex items-start gap-3 text-sm">
+                <div className={clsxDot(r.action)}>{r.action}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-surface-800">
+                    <span className="font-semibold">{r.userName ?? 'System'}</span>
+                    <span className="text-surface-400"> {r.userEmail ? `· ${r.userEmail}` : ''} → </span>
+                    <span className="font-medium">{r.entity}{r.entityId ? ` #${r.entityId}` : ''}</span>
+                    {r.schoolName && <span className="text-surface-400"> · {r.schoolName}</span>}
+                  </p>
+                  {r.details && Object.keys(r.details).length > 0 && (
+                    <p className="text-[10.5px] text-surface-400 font-mono truncate mt-0.5">{JSON.stringify(r.details).slice(0, 160)}</p>
+                  )}
+                </div>
+                <span className="text-[10.5px] text-surface-400 flex-shrink-0">{new Date(r.createdAt).toLocaleString()}</span>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <button className="btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Prev</button>
+            <span className="text-xs text-surface-500">Page {page} / {pages}</span>
+            <button className="btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>Next →</button>
+          </div>
+        </>
+      )}
     </div>
   );
+}
+
+function clsxDot(action: string): string {
+  return `text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0 ${ACTION_COLOR[action] ?? 'bg-surface-100 text-surface-600'}`;
 }

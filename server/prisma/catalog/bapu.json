@@ -1,0 +1,151 @@
+{
+  "_comment": "B.A — University of the Punjab catalog. The legacy 2-year B.A (Annual System) is officially REPLACED by 2-year/4-semester Associate Degree programs (and 4-year BS). Classes 101/102 (annual scheme) are archived references; class 103 is the current Associate Degree program. Subjects = PU course-outline lists (official); no single authorized textbook is prescribed by PU for these programs, so rows are subject-level with 'syllabus = PU course outline' notes.",
+  "courseCode": "BAPU",
+  "defaults": {
+    "publisher": "University of the Punjab (Examinations: PU affiliated colleges)",
+    "session": "2026-27",
+    "source": "s9"
+  },
+  "subjectPool": [
+    {
+      "name": "English Language",
+      "medium": "em",
+      "note": "Compulsory English Language per PU B.A./B.Sc./Associate Degree course outline."
+    },
+    {
+      "name": "Arabic",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Economics",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Education",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "English Literature",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Fine Arts",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Geography",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Health & Physical Education",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "History",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline (new History scheme w.e.f. session 2020)."
+    },
+    {
+      "name": "International Relations",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Islamic Studies",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Journalism",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Library & Information Science",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Persian",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Philosophy",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Political Science",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Punjabi",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Psychology",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Social Work",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Sociology",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Urdu",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Women Studies",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline."
+    },
+    {
+      "name": "Applied Psychology",
+      "medium": "em",
+      "note": "Optional subject per PU course outline."
+    },
+    {
+      "name": "Statistics",
+      "medium": "em",
+      "note": "Elective/optional per PU course outline (arts option where offered)."
+    }
+  ],
+  "classes": [
+    {
+      "grade": 101,
+      "notes": "LEGACY (ARCHIVED): B.A Annual System Part-I — replaced by Associate Degree semester programs. Class rows kept as historical syllabus references only.",
+      "subjectsFrom": "subjectPool",
+      "subjectNote": "Annual-scheme papers followed PU course outlines; offered subjects varied per college. Preserve as reference; current offering = class 103."
+    },
+    {
+      "grade": 102,
+      "notes": "LEGACY (ARCHIVED): B.A Annual System Part-II — replaced by Associate Degree semester programs.",
+      "subjectsFrom": "subjectPool",
+      "subjectNote": "Annual-scheme papers followed PU course outlines; offered subjects varied per college. Preserve as reference; current offering = class 103."
+    },
+    {
+      "grade": 103,
+      "notes": "CURRENT: Associate Degree in Arts (B.A equivalent) — 2 years / 4 semesters, semester system (double-major + one minor, or subject-specific).",
+      "subjectsFrom": "subjectPool",
+      "subjectNote": "PU course-outline subject pool; actual semester-wise compulsory/elective mapping per college scheme — pending semester-split confirmation before paper generation."
+    }
+  ]
+}

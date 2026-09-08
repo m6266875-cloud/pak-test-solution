@@ -14,11 +14,15 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import GeneratePaperPage from './pages/Papers/GeneratePaperPage';
 import MyPapersPage from './pages/Papers/MyPapersPage';
 import PaperDetailPage from './pages/Papers/PaperDetailPage';
+import PatternsPage from './pages/Patterns/PatternsPage';
 import QuestionBankPage from './pages/Questions/QuestionBankPage';
 import AdminUsersPage from './pages/Admin/AdminUsersPage';
 import AdminAuditPage from './pages/Admin/AdminAuditPage';
+import AdminPapersPage from './pages/Admin/AdminPapersPage';
 import SchoolsPage from './pages/Admin/SchoolsPage';
 import SyllabusPage from './pages/Admin/SyllabusPage';
+import TemplatesPage from './pages/Admin/TemplatesPage';
+import AnalyticsPage from './pages/Admin/AnalyticsPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -35,6 +39,15 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
     return <Navigate to="/app/dashboard" replace />;
   }
   return <>{children}</>;
+}
+
+/** Phase-3 module permission guard (backend also enforces every route). */
+function RequirePerm({ perm, children }: { perm: string; children: React.ReactNode }) {
+  const { user } = useAppSelector((s) => s.auth);
+  if (!user) return <Navigate to="/login" replace />;
+  const allowed = user.role === 'super_admin'
+    || (user.role === 'school_admin' && (user.permissions ?? []).includes(perm));
+  return allowed ? <>{children}</> : <Navigate to="/app/dashboard" replace />;
 }
 
 function FullPageSpinner() {
@@ -94,14 +107,17 @@ export default function App() {
         <Route path="papers" element={<MyPapersPage />} />
         <Route path="papers/:id" element={<PaperDetailPage />} />
         <Route path="questions" element={<QuestionBankPage />} />
+        <Route path="patterns" element={<PatternsPage />} />
         <Route path="profile" element={<ProfilePage />} />
 
         {/* Admin only */}
-        <Route path="admin/users" element={<RequireAdmin><AdminUsersPage /></RequireAdmin>} />
-        <Route path="admin/schools" element={<RequireAdmin><SchoolsPage /></RequireAdmin>} />
-        <Route path="admin/syllabus" element={<RequireAdmin><SyllabusPage /></RequireAdmin>} />
-        <Route path="admin/analytics" element={<RequireAdmin><AdminAuditPage /></RequireAdmin>} />
-        <Route path="admin/audit" element={<RequireAdmin><AdminAuditPage /></RequireAdmin>} />
+        <Route path="admin/users" element={<RequirePerm perm="users"><AdminUsersPage /></RequirePerm>} />
+        <Route path="admin/schools" element={<RequirePerm perm="schools"><SchoolsPage /></RequirePerm>} />
+        <Route path="admin/syllabus" element={<RequirePerm perm="syllabus"><SyllabusPage /></RequirePerm>} />
+        <Route path="admin/templates" element={<RequirePerm perm="settings"><TemplatesPage /></RequirePerm>} />
+        <Route path="admin/analytics" element={<RequirePerm perm="analytics"><AnalyticsPage /></RequirePerm>} />
+        <Route path="admin/papers" element={<RequirePerm perm="generatedPapers"><AdminPapersPage /></RequirePerm>} />
+        <Route path="admin/audit" element={<RequirePerm perm="audit"><AdminAuditPage /></RequirePerm>} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

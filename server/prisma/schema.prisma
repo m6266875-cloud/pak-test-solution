@@ -7,6 +7,179 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// PAK TEST SOLUTION — PHASE 1 : REAL COURSE / SYLLABUS / BOOK CATALOG
+//
+// Entities added by Phase 1 (existing models are preserved below — nothing was
+// removed or renamed):
+//
+//   Course            → supported course/publisher/board platform (PTB, OUP
+//                       Pakistan, AFAQ, GOHAR, Federal/FBISE, B.A Punjab Univ.)
+//   AcademicSession   → version-aware academic years (2024-25 … 2027-28 …)
+//   CourseSession     → per-course session status (current/upcoming/previous/
+//                       archived) — exactly one CURRENT per course
+//   CourseClass       → which classes/programs legitimately exist per course
+//
+// Enriched existing entities:
+//   Class     (unchanged)                 — global classes 1-12 + program rows
+//   Subject   + courseId, status, ordering
+//   Book      + courseId, sessionId, isbn, bookCode, cover, authorized-file
+//             lifecycle fields + source verification trail
+//   Chapter   + status + verification trail (+ per-book duplicate numbering)
+//   Exercise  + status
+//   Topic     + status + sortOrder
+//   Question  + bookId, pageRef, sourceRef (provenance for imported content)
+//
+// Versioning rule: syllabus/edition rows are never overwritten; a new session
+// gets NEW rows (Book/Chapter sets) and the old rows are set to previous/
+// archived. Papers keep referencing their original rows (no cascade delete).
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── Phase 1 enums ───────────────────────────────────────────────────────────
+enum CourseType {
+  board
+  publisher
+  program
+}
+
+enum CourseStatus {
+  active
+  inactive
+  archived
+}
+
+// Content lifecycle used by subjects, chapters, exercises and topics.
+enum ContentStatus {
+  active
+  inactive
+  archived
+}
+
+// Per-course academic-session status.
+enum SessionStatus {
+  upcoming
+  current
+  previous
+  archived
+}
+
+// Authorized book-file processing pipeline:
+// upload → process → extract → structure → admin review → approve → question bank
+enum BookFileStatus {
+  uploaded
+  processing
+  extracting
+  structuring
+  review
+  approved
+  rejected
+  failed
+}
+
+// ─── Phase 1: Course (supported publisher/board/program platform) ───────────
+model Course {
+  id          Int        @id @default(autoincrement())
+  code        String     @unique // stable key: PTB, OUP, AFAQ, GOHAR, FBISE, BAPU
+  name        String // display name, e.g. "PTB — Punjab Curriculum & Textbook Board"
+  shortName   String? // e.g. "Punjab Textbook Board"
+  type        CourseType @default(board)
+  region      String? // e.g. "Punjab, Pakistan"
+  description String?   @db.Text
+  website     String?
+
+  status       CourseStatus @default(active)
+  displayOrder Int          @default(0)
+
+  // Logo (file lives in application storage; DB stores the reference)
+  logoUrl      String? // "/uploads/logos/ptb.png"
+  logoStorageKey String? // object-store key when not local disk
+  logoEnabled  Boolean @default(true)
+  logoAltText  String?
+  logoMeta     Json?
+
+  // Data-quality / source trail (preloaded catalogue rows)
+  sourceRef String? // canonical URL the entry was verified against
+  dataNotes String? @db.Text
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions       CourseSession[]
+  courseClasses  CourseClass[]
+  subjects       Subject[]
+  books          Book[]
+  questions      Question[]
+  papers         Paper[]
+
+  @@index([status])
+  @@index([type])
+  @@index([displayOrder])
+}
+
+// ─── Phase 1: Academic session (version-aware academic year) ────────────────
+model AcademicSession {
+  id        Int    @id @default(autoincrement())
+  code      String @unique // "2025-26"
+  name      String // "Academic Year 2025-26"
+  startYear Int
+  endYear   Int
+  description String?
+  displayOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courseLinks CourseSession[]
+  books       Book[]
+  questions   Question[]
+  papers      Paper[]
+
+  @@index([startYear])
+  @@index([displayOrder])
+}
+
+// Per-course session link: which session applies to a course and its status.
+model CourseSession {
+  id        Int           @id @default(autoincrement())
+  courseId  Int
+  sessionId Int
+  status    SessionStatus @default(previous)
+  notes     String?
+  sortOrder Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course  Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, sessionId])
+  @@index([status])
+  @@index([sessionId])
+}
+
+// Which classes/programs are valid for a course (PTB 1-12, OUP 1-8, B.A PU
+// program rows, etc.) — prevents forcing Classes 1-12 onto every course.
+model CourseClass {
+  id           Int      @id @default(autoincrement())
+  courseId     Int
+  classId      Int
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, classId])
+  @@index([courseId, isActive])
+}
+
+// ─── User (unchanged + book-upload relations) ───────────────────────────────
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -28,9 +201,14 @@ model User {
   activityLogs     ActivityLog[]
   refreshTokens    RefreshToken[]
   adminPermissions AdminPermission[]
+  uploadedBooks    Book[]            @relation("BookUploadedBy")
+  reviewedBooks    Book[]            @relation("BookReviewedBy")
+  questionsCreated Question[]        @relation("QuestionsCreated")
+  questionsUpdated Question[]        @relation("QuestionsUpdated")
+  paperPatterns    PaperPattern[]
 }
 
-// ─── Admin System Upgrade: Schools ───────────────────────────────────────────
+// ─── School (unchanged) ──────────────────────────────────────────────────────
 model School {
   id        Int          @id @default(autoincrement())
   name      String
@@ -52,7 +230,26 @@ model School {
   @@index([city])
 }
 
-// ─── Admin System Upgrade: Syllabus / PTB hierarchy ──────────────────────────
+// ─── Class (unchanged). School classes use grades 1-12; program entries
+//     (e.g. "B.A (Punjab University) Part-I") use grade values ≥ 100 so the
+//     unique/order semantics stay intact. Valid classes per course live in
+//     CourseClass. ────────────────────────────────────────────────────────────
+model Class {
+  id        Int      @id @default(autoincrement())
+  name      String
+  grade     Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subjects        Subject[]
+  teacherSubjects TeacherSubject[]
+  papers          Paper[]
+  books           Book[]
+  courseLinks     CourseClass[]
+  questions       Question[]
+}
+
+// ─── Board (unchanged — exam-board registry, e.g. BISE Lahore) ───────────────
 model Board {
   id        Int      @id @default(autoincrement())
   name      String
@@ -65,57 +262,240 @@ model Board {
   subjects Subject[]
 }
 
-model Book {
-  id        Int        @id @default(autoincrement())
-  title     String
-  publisher String?
-  edition   String?
-  year      Int?
-  language  Medium     @default(english)
-  fileUrl   String?
-  status    BookStatus @default(active)
-  boardId   Int?
-  classId   Int?
-  subjectId Int?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+// ─── Subject (enriched: course scoping + status + ordering) ──────────────────
+// courseId null ⇒ legacy / school-owned subject rows (kept fully functional).
+model Subject {
+  id          Int           @id @default(autoincrement())
+  name        String
+  code        String?
+  medium      Medium        @default(english)
+  classId     Int
+  courseId    Int?
+  boardId     Int?
+  schoolId    Int?
+  description String?
+  status      ContentStatus @default(active)
+  displayOrder Int          @default(0)
+  sourceRef   String?
+  dataNotes   String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  board    Board?    @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  class    Class?    @relation(fields: [classId], references: [id], onDelete: SetNull)
-  subject  Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  chapters Chapter[]
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course          Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  board           Board?           @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  school          School?          @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  chapters        Chapter[]
+  books           Book[]
+  teacherSubjects TeacherSubject[]
+  paperSubjects   PaperSubject[]
+  questions       Question[]
 
-  @@index([boardId])
-  @@index([classId])
-  @@index([subjectId])
+  @@index([courseId, classId])
+  @@index([courseId, classId, status])
+  @@index([classId, medium])
   @@index([status])
 }
 
+// ─── Book / textbook (enriched: course+session+ISBN+authorized file) ────────
+model Book {
+  id          Int        @id @default(autoincrement())
+  title       String
+  publisher   String?
+  edition     String?
+  year        Int?
+  language    Medium     @default(english)
+
+  // Phase 1 catalogue keys
+  courseId  Int?
+  sessionId Int?
+  classId   Int?
+  subjectId Int?
+  boardId   Int? // optional exam-board scope (legacy)
+  bookCode  String? // publisher's own code when published
+  isbn      String?
+  coverUrl  String? // authorized cover image (application storage)
+
+  // Authorized soft-copy / digital file support
+  fileUrl          String? // served from app storage (protected by permissions)
+  fileName         String?
+  fileMime         String?
+  fileSize         Int?
+  fileStatus       BookFileStatus?
+  fileUploadedById Int?
+  fileUploadedAt   DateTime?
+  fileProcessedAt  DateTime?
+  fileReviewedById Int?
+  fileReviewedAt   DateTime?
+  processingLog    Json? // step history of the processing pipeline
+
+  status     BookStatus @default(active)
+  sourceRef  String? // canonical source the entry was verified against
+  dataNotes  String? @db.Text
+  verified   Boolean  @default(false)
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  course       Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  session      AcademicSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  class        Class?    @relation(fields: [classId], references: [id], onDelete: SetNull)
+  subject      Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  board        Board?    @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  uploadedBy   User?     @relation("BookUploadedBy", fields: [fileUploadedById], references: [id], onDelete: SetNull)
+  reviewedBy   User?     @relation("BookReviewedBy", fields: [fileReviewedById], references: [id], onDelete: SetNull)
+  chapters     Chapter[]
+  questions    Question[]
+  papers       Paper[]
+
+  @@index([courseId])
+  @@index([sessionId])
+  @@index([courseId, sessionId, status])
+  @@index([classId, subjectId])
+  @@index([status])
+}
+
+// ─── Chapter (enriched: status + verification trail) ─────────────────────────
+// A chapter may belong to a Subject only (bookId null — legacy/generic) or to
+// one concrete Book row. Book-specific numbering allows two editions of the
+// same subject/book to keep separate chapter sets (versioning). Uniqueness:
+//   (subjectId, number) where bookId IS NULL
+//   (bookId,    number) where bookId IS NOT NULL
+// enforced by partial unique indexes created in the migration.
+model Chapter {
+  id          Int           @id @default(autoincrement())
+  name        String
+  number      Int
+  subjectId   Int
+  bookId      Int?
+  description String?
+  status      ContentStatus @default(active)
+  // true only when the chapter list was confirmed against an official /
+  // publisher source (see sources.json kind); harvested-but-unconfirmed
+  // lists stay false so they are never presented as verified syllabus.
+  verified    Boolean       @default(false)
+  sourceRef   String?
+  dataNotes   String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  book          Book?          @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  questions     Question[]
+  exercises     Exercise[]
+  topics        Topic[]
+  paperChapters PaperChapter[]
+
+  @@index([subjectId, number])
+  @@index([bookId, number])
+  @@index([subjectId, bookId])
+  @@index([status])
+}
+
+// ─── Exercise (enriched: status) ─────────────────────────────────────────────
 model Exercise {
-  id        Int      @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   name      String
-  number    Int      @default(1)
+  number    Int           @default(1)
   chapterId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    ContentStatus @default(active)
+  sourceRef String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   questions Question[]
 
   @@unique([number, chapterId])
+  @@index([chapterId, status])
 }
 
+// ─── Topic (enriched: status + ordering) ─────────────────────────────────────
 model Topic {
-  id        Int      @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   name      String
   chapterId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    ContentStatus @default(active)
+  sortOrder Int           @default(0)
+  sourceRef String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   questions Question[]
 
-  @@index([chapterId])
+  @@index([chapterId, status])
+}
+
+// ─── Question (enriched: book/page provenance for imported content) ──────────
+model Question {
+  id         Int            @id @default(autoincrement())
+  chapterId  Int
+  exerciseId Int?
+  topicId    Int?
+  bookId     Int? // book/edition the question was verified against (when any)
+  type       QuestionType   @default(mcq)
+  text       String         @db.Text
+  marks      Int            @default(1)
+  options    Json?
+  answer     String?        @db.Text
+  difficulty Difficulty     @default(easy)
+  language   Medium         @default(english)
+  source     QuestionSource @default(manual)
+  status     QuestionStatus @default(pending)
+  tags       String[]
+  pageRef    String? // page/section reference inside the source book
+  sourceRef  String?
+  isActive   Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  // ── Phase 2: catalog chain (denormalised for fast filters + scoping) ─────
+  courseId  Int?
+  sessionId Int?
+  classId   Int?
+  subjectId Int?
+  category  String? // exercise | example | review | past_paper | conceptual | practice
+  bankNo    String? // human-readable question id
+
+  // ── Phase 2: content extras ──────────────────────────────────────────────
+  hint         String? @db.Text
+  explanation  String? @db.Text
+  images       Json?   // { stem?: url, options?: { A?: url, ... } } (authorized)
+  importedFrom String? // file/sheet the question was imported from
+  importRef    String? // row reference inside the import source
+
+  // ── Phase 2: audit trail ─────────────────────────────────────────────────
+  createdById Int?
+  updatedById Int?
+
+  chapter        Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  book           Book?           @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  exercise       Exercise?       @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  topic          Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  course         Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  session        AcademicSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  class          Class?          @relation(fields: [classId], references: [id], onDelete: SetNull)
+  subject        Subject?        @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  createdBy      User?           @relation("QuestionsCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy      User?           @relation("QuestionsUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  paperQuestions PaperQuestion[]
+
+  @@index([status, isActive])
+  @@index([exerciseId])
+  @@index([topicId])
+  @@index([bookId])
+  @@index([courseId, classId, subjectId])
+  @@index([subjectId, status])
+  @@index([type, status])
+  @@index([status, type, language])
+  @@index([difficulty])
+  @@index([language])
+  @@index([marks])
+  @@index([category])
+  @@index([sessionId])
+  @@index([createdById])
+  @@index([bankNo])
 }
 
 model AdminPermission {
@@ -153,91 +533,7 @@ model TeacherSubject {
   @@unique([teacherId, subjectId, classId])
 }
 
-model Class {
-  id        Int      @id @default(autoincrement())
-  name      String
-  grade     Int      @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  subjects        Subject[]
-  teacherSubjects TeacherSubject[]
-  papers          Paper[]
-  books           Book[]
-}
-
-model Subject {
-  id          Int      @id @default(autoincrement())
-  name        String
-  code        String?
-  medium      Medium   @default(english)
-  classId     Int
-  boardId     Int?
-  schoolId    Int?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
-  board           Board?           @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  school          School?          @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  chapters        Chapter[]
-  books           Book[]
-  teacherSubjects TeacherSubject[]
-  paperSubjects   PaperSubject[]
-
-  @@unique([name, classId, medium])
-}
-
-model Chapter {
-  id          Int      @id @default(autoincrement())
-  name        String
-  number      Int
-  subjectId   Int
-  bookId      Int?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  book          Book?          @relation(fields: [bookId], references: [id], onDelete: SetNull)
-  questions     Question[]
-  exercises     Exercise[]
-  topics        Topic[]
-  paperChapters PaperChapter[]
-
-  @@unique([number, subjectId])
-}
-
-model Question {
-  id         Int            @id @default(autoincrement())
-  chapterId  Int
-  exerciseId Int?
-  topicId    Int?
-  type       QuestionType   @default(mcq)
-  text       String         @db.Text
-  marks      Int            @default(1)
-  options    Json?
-  answer     String?        @db.Text
-  difficulty Difficulty     @default(easy)
-  language   Medium         @default(english)
-  source     QuestionSource @default(manual)
-  status     QuestionStatus @default(approved)
-  tags       String[]
-  isActive   Boolean        @default(true)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-
-  chapter        Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  exercise       Exercise?       @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
-  topic          Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  paperQuestions PaperQuestion[]
-
-  @@index([status])
-  @@index([exerciseId])
-  @@index([topicId])
-}
-
+// ─── Paper system (unchanged) ────────────────────────────────────────────────
 model Paper {
   id          Int         @id @default(autoincrement())
   title       String
@@ -253,15 +549,30 @@ model Paper {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  // ── Phase 2: exact syllabus scope at generation time ─────────────────────
+  courseId  Int?
+  sessionId Int?
+  bookId    Int?
+  paperType String     @default("mixed") // objective | subjective | mixed
+  examTitle String?
+
   teacher          User             @relation("TeacherPapers", fields: [teacherId], references: [id])
   createdBy        User             @relation("AdminCreatedPapers", fields: [createdById], references: [id])
   class            Class            @relation(fields: [classId], references: [id])
+  course           Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  session          AcademicSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  book             Book?            @relation(fields: [bookId], references: [id], onDelete: SetNull)
   paperSubjects    PaperSubject[]
   paperChapters    PaperChapter[]
   paperQuestions   PaperQuestion[]
   paperSettings    PaperSetting?
   paperFormatting  PaperFormatting?
   activityLogs     ActivityLog[]
+
+  @@index([teacherId, status])
+  @@index([courseId, classId])
+  @@index([sessionId])
+  @@index([createdAt])
 }
 
 model PaperSubject {
@@ -295,10 +606,20 @@ model PaperQuestion {
   isSelected Boolean  @default(true)
   createdAt  DateTime @default(now())
 
+  // ── Phase 2: snapshots taken at generation time — later edits to the bank
+  // row never mutate already-generated papers. displayTextOverride holds a
+  // teacher's per-paper wording edit (bank text stays canonical).
+  type                QuestionType?
+  difficulty          Difficulty?
+  language            Medium?
+  displayTextOverride String? @db.Text
+
   paper    Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
   question Question @relation(fields: [questionId], references: [id])
 
   @@unique([paperId, questionId])
+  @@index([paperId, order])
+  @@index([questionId])
 }
 
 model PaperSetting {
@@ -317,8 +638,15 @@ model PaperSetting {
   blankLines         Json?
   showAnswerKey      Boolean  @default(true)
   showBubbleSheet    Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+
+  // ── Phase 2: full wizard configuration for later regeneration/editing ────
+  distribution     Json?
+  generationConfig Json?
+  paperCount       Int @default(1)
+  paperIndex       Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
 }
@@ -346,17 +674,37 @@ model PaperFormatting {
   paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
 }
 
+// ─── Phase 2: saved generation patterns (teacher patterns + admin-shared) ───
+// config is the full wizard JSON: courseId, sessionId?, classId, subjectId(s),
+// bookId?, chapterIds?, topicIds?, exerciseIds?, paperType, language,
+// totalMarks, distribution[{type,count,marks}], timeLimit, …
+model PaperPattern {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  config      Json
+  isShared    Boolean  @default(false) // admin-pinned → visible to all teachers
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@index([isShared])
+}
+
 model PastPaper {
-  id        Int      @id @default(autoincrement())
-  title     String
-  year      Int
-  board     String   @default("Punjab")
-  classId   Int
-  subjectId Int
-  paperUrl  String   @db.Text
+  id         Int     @id @default(autoincrement())
+  title      String
+  year       Int
+  board      String  @default("Punjab")
+  classId    Int
+  subjectId  Int
+  paperUrl   String  @db.Text
   isOfficial Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model ActivityLog {
@@ -373,6 +721,7 @@ model ActivityLog {
   paper Paper? @relation(fields: [paperId], references: [id], onDelete: SetNull)
 }
 
+// ─── Existing enums (unchanged) ──────────────────────────────────────────────
 enum Role {
   super_admin
   school_admin
@@ -389,6 +738,11 @@ enum QuestionType {
   mcq
   short
   essay
+  true_false
+  fill_blank
+  matching
+  numerical
+  conceptual
 }
 
 enum Difficulty {
@@ -409,7 +763,6 @@ enum LayoutType {
   half_page
 }
 
-// ─── Admin System Upgrade enums ──────────────────────────────────────────────
 enum SchoolStatus {
   active
   inactive
@@ -433,4 +786,6 @@ enum QuestionStatus {
   pending
   approved
   rejected
+  draft
+  archived
 }

@@ -1,0 +1,123 @@
+{
+  "_comment": "Phase-1 supported courses (platform entities), academic sessions and per-course session status. Course catalog detail lives in per-course files (ptb.json, federal.json, oxford.json, afaq.json, gohar.json, bapu.json).",
+  "sessions": [
+    { "code": "2024-25", "startYear": 2024, "endYear": 2025, "name": "Academic Year 2024-25", "displayOrder": 1 },
+    { "code": "2025-26", "startYear": 2025, "endYear": 2026, "name": "Academic Year 2025-26", "displayOrder": 2 },
+    { "code": "2026-27", "startYear": 2026, "endYear": 2027, "name": "Academic Year 2026-27", "displayOrder": 3 },
+    { "code": "2027-28", "startYear": 2027, "endYear": 2028, "name": "Academic Year 2027-28", "displayOrder": 4 }
+  ],
+  "courses": [
+    {
+      "code": "PTB",
+      "name": "PTB — Punjab Curriculum & Textbook Board (PCTB)",
+      "shortName": "Punjab Textbook Board",
+      "type": "board",
+      "region": "Punjab, Pakistan",
+      "website": "https://pctb.punjab.gov.pk/",
+      "displayOrder": 1,
+      "description": "Government textbooks for Punjab public schools & colleges (Classes 1-12) under the Single National Curriculum. Official e-books are published free on the PCTB portal.",
+      "logo": "/uploads/logos/ptb.png",
+      "sourceRef": "s1",
+      "classes": { "from": 1, "to": 12 },
+      "courseSessions": [
+        { "session": "2025-26", "status": "previous", "notes": "New 9th-class books introduced (first year of the 2025 curriculum)." },
+        { "session": "2026-27", "status": "current", "notes": "Current session: new 10th-class books introduced alongside continuing 9th-class books." },
+        { "session": "2027-28", "status": "upcoming", "notes": "Next session: rolling new-curriculum editions." }
+      ]
+    },
+    {
+      "code": "FBISE",
+      "name": "Federal Board (FBISE) — Federal Curriculum",
+      "shortName": "Federal Board",
+      "type": "board",
+      "region": "Islamabad / Federal, Pakistan",
+      "website": "https://www.fbise.edu.pk/",
+      "displayOrder": 2,
+      "description": "Federal Board of Intermediate & Secondary Education. Federal schools follow National Book Foundation (NBF) model textbooks on the SNC/NCP.",
+      "logo": "/uploads/logos/fbise.png",
+      "sourceRef": "s13",
+      "classes": { "from": 1, "to": 12 },
+      "courseSessions": [
+        { "session": "2025-26", "status": "previous", "notes": "NCP 2022-23 based NBF books in use (SSC/HSSC)." },
+        { "session": "2026-27", "status": "current", "notes": "Current session." },
+        { "session": "2027-28", "status": "upcoming", "notes": "" }
+      ]
+    },
+    {
+      "code": "OUP",
+      "name": "Oxford University Press Pakistan",
+      "shortName": "Oxford University Press",
+      "type": "publisher",
+      "region": "Pakistan",
+      "website": "https://oup.com.pk/",
+      "displayOrder": 3,
+      "description": "School textbooks & courses for Pakistan (SNC/PNC-aligned and international streams). Pre-primary to Class 8 school courses; secondary titles for O-level streams.",
+      "logo": "/uploads/logos/oup.png",
+      "sourceRef": "s10",
+      "classes": { "from": 1, "to": 8 },
+      "courseSessions": [
+        { "session": "2025-26", "status": "previous", "notes": "Publisher catalogue cycle — not tied to government session dates." },
+        { "session": "2026-27", "status": "current", "notes": "2025-26 catalogue / current editions." },
+        { "session": "2027-28", "status": "upcoming", "notes": "" }
+      ]
+    },
+    {
+      "code": "AFAQ",
+      "name": "AFAQ Publishers (Association for Academic Quality)",
+      "shortName": "AFAQ",
+      "type": "publisher",
+      "region": "Lahore, Pakistan (nationwide)",
+      "website": "https://afaq.edu.pk/",
+      "displayOrder": 4,
+      "description": "Private school textbook publisher. SNC-aligned series: Sun Series (New Edition), Iqbal Series, Nakhlah readers and workbooks, Classes 1-8.",
+      "logo": "/uploads/logos/afaq.png",
+      "sourceRef": "s11",
+      "classes": { "from": 1, "to": 8 },
+      "courseSessions": [
+        { "session": "2025-26", "status": "previous", "notes": "Publisher catalogue cycle." },
+        { "session": "2026-27", "status": "current", "notes": "Current SNC editions." },
+        { "session": "2027-28", "status": "upcoming", "notes": "" }
+      ]
+    },
+    {
+      "code": "GOHAR",
+      "name": "GOHAR Publishers",
+      "shortName": "GOHAR",
+      "type": "publisher",
+      "region": "Lahore, Pakistan (nationwide)",
+      "website": "https://goharpublishers.com/",
+      "displayOrder": 5,
+      "description": "Private school textbook publisher. Gohar SNC series (English, Nida-e-Urdu, Mathematics, Science, General Knowledge, Social Studies) and Spark SNC Mathematics, Classes 1-8.",
+      "logo": "/uploads/logos/gohar.png",
+      "sourceRef": "s12",
+      "classes": { "from": 1, "to": 8 },
+      "courseSessions": [
+        { "session": "2025-26", "status": "previous", "notes": "Publisher catalogue cycle." },
+        { "session": "2026-27", "status": "current", "notes": "Current SNC editions." },
+        { "session": "2027-28", "status": "upcoming", "notes": "" }
+      ]
+    },
+    {
+      "code": "BAPU",
+      "name": "B.A — University of the Punjab (Affiliated Colleges)",
+      "shortName": "B.A Punjab University",
+      "type": "program",
+      "region": "Lahore / Punjab, Pakistan",
+      "website": "https://pu.edu.pk/",
+      "displayOrder": 6,
+      "description": "Undergraduate Arts programs examined by the University of the Punjab. NOTE: the two-year B.A./B.Sc. ANNUAL system has been officially replaced by 2-year (4-semester) Associate Degree programs and 4-year BS programs; legacy annual-scheme rows are kept as ARCHIVED reference.",
+      "logo": "/uploads/logos/bapu.png",
+      "sourceRef": "s9",
+      "classes": [
+        { "grade": 101, "name": "B.A (Annual System) Part-I — legacy scheme (replaced)", "displayOrder": 1, "notes": "Superseded by Associate Degree (semester system). Kept for historical syllabus references." },
+        { "grade": 102, "name": "B.A (Annual System) Part-II — legacy scheme (replaced)", "displayOrder": 2, "notes": "Superseded by Associate Degree (semester system). Kept for historical syllabus references." },
+        { "grade": 103, "name": "Associate Degree in Arts (B.A equivalent, 2-year / 4-semester)", "displayOrder": 3, "notes": "Current replacement program (double-major with one minor, or subject-specific), semester system." }
+      ],
+      "courseSessions": [
+        { "session": "2024-25", "status": "archived", "notes": "Final years of the legacy B.A annual scheme; kept for reference." },
+        { "session": "2025-26", "status": "previous", "notes": "Transition to Associate Degree semester programs." },
+        { "session": "2026-27", "status": "current", "notes": "Current: Associate Degree in Arts (semester system)." }
+      ]
+    }
+  ]
+}

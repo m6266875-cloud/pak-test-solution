@@ -1,0 +1,218 @@
+{
+  "_comment": "AFAQ Publishers catalog (Classes 1-8). Primary rows anchored to the official NCC 2021 approved list (ICT); 6-8 rows anchored to the AFAQ product catalogue (Sun Series New Edition / Iqbal Series New Edition). verify:false = per-subject/per-class alignment pending publisher confirmation.",
+  "courseCode": "AFAQ",
+  "defaults": {
+    "publisher": "AFAQ Publishers (Lahore)",
+    "session": "2026-27",
+    "source": "s11"
+  },
+  "classes": [
+    {
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Iqbal Series English {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Sun Series English also sold; Iqbal series was the 2021-approved title."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Iqbal Series Urdu {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series Mathematics {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Iqbal Series Mathematics 1-5 also approved in 2021."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "General Knowledge",
+          "medium": "em",
+          "note": "No verified AFAQ SNC General Knowledge title in the 2021 approvals — pending publisher mapping."
+        }
+      ]
+    },
+    {
+      "grades": [
+        4,
+        5
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Iqbal Series English {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Iqbal Series Urdu {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series Mathematics {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series General Science {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Iqbal Series General Science 4-5 also approved in 2021."
+        },
+        {
+          "name": "Social Studies",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series Social Studies {g} (English Version)",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          },
+          "note": "Urdu version (Social Studies/Samaji Uloom) also approved in 2021."
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "SNC Edition (2021 approval)",
+            "year": 2021,
+            "verify": true,
+            "sourceRef": "s7"
+          }
+        }
+      ]
+    },
+    {
+      "grades": [
+        6,
+        7,
+        8
+      ],
+      "subjects": [
+        {
+          "name": "English",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series English {g}",
+            "edition": "SNC Edition (New Edition)",
+            "year": 2024,
+            "verify": false
+          },
+          "note": "Series confirmed in AFAQ catalogue for 6-8; per-subject approval mapping pending."
+        },
+        {
+          "name": "Urdu",
+          "medium": "urdu",
+          "book": {
+            "title": "Sun Series Urdu {g}",
+            "edition": "SNC Edition (New Edition)",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Mathematics",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series Mathematics {g}",
+            "edition": "SNC Edition (New Edition)",
+            "year": 2024,
+            "verify": false
+          },
+          "note": "Sun Series SNC Mathematics 6-8 documented (e.g. Maths 8 SNC edition listings)."
+        },
+        {
+          "name": "General Science",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series General Science {g}",
+            "edition": "SNC Edition (New Edition)",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Social Studies",
+          "medium": "em",
+          "book": {
+            "title": "Sun Series Social Studies {g}",
+            "edition": "SNC Edition (New Edition)",
+            "year": 2024,
+            "verify": false
+          }
+        },
+        {
+          "name": "Islamiyat",
+          "medium": "urdu",
+          "book": {
+            "title": "Islamiyat {g}",
+            "edition": "SNC Edition (New Edition)",
+            "year": 2024,
+            "verify": false
+          }
+        }
+      ]
+    }
+  ]
+}

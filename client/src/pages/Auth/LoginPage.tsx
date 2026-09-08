@@ -194,34 +194,37 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo credentials */}
+          {/* Demo credentials — one account per PTB grade-9 subject */}
           <div className="mt-8 p-4 bg-surface-50 rounded-2xl border border-surface-100">
-            <p className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">Demo Accounts</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  (document.querySelector('input[type="email"]') as HTMLInputElement).value = 'admin@paktestsolution.com';
-                  (document.querySelector('input[type="password"]') as HTMLInputElement).value = 'Admin@123456';
-                }}
-                className="p-3 bg-white rounded-xl border border-surface-200 hover:border-brand-300 transition-all text-left"
-              >
-                <div className="text-xs font-bold text-brand-600 mb-1">Admin</div>
-                <div className="text-xs text-surface-500">admin@paktestsolution.com</div>
-                <div className="text-xs text-surface-400">Admin@123456</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  (document.querySelector('input[type="email"]') as HTMLInputElement).value = 'teacher@demo.com';
-                  (document.querySelector('input[type="password"]') as HTMLInputElement).value = 'Teacher@123';
-                }}
-                className="p-3 bg-white rounded-xl border border-surface-200 hover:border-brand-300 transition-all text-left"
-              >
-                <div className="text-xs font-bold text-emerald-600 mb-1">Teacher</div>
-                <div className="text-xs text-surface-500">teacher@demo.com</div>
-                <div className="text-xs text-surface-400">Teacher@123</div>
-              </button>
+            <p className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-1">Demo Accounts — one teacher per subject</p>
+            <p className="text-xs text-surface-400 mb-3">Each teacher can only see and generate papers for their own subject. Click a card to fill the form.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { role: 'Admin', tint: 'bg-rose-50 text-rose-600', email: 'admin@paktestsolution.com', pw: 'Admin@123456', subject: 'All subjects' },
+                { role: 'Maths Teacher', tint: 'bg-brand-50 text-brand-600', email: 'math.teacher@demo.test', pw: 'Teacher@123456', subject: 'Mathematics' },
+                { role: 'English Teacher', tint: 'bg-indigo-50 text-indigo-600', email: 'eng.teacher@demo.test', pw: 'Teacher@123456', subject: 'English' },
+                { role: 'Physics Teacher', tint: 'bg-sky-50 text-sky-600', email: 'physics.teacher@demo.test', pw: 'Teacher@123456', subject: 'Physics' },
+                { role: 'Chemistry Teacher', tint: 'bg-emerald-50 text-emerald-600', email: 'chemistry.teacher@demo.test', pw: 'Teacher@123456', subject: 'Chemistry' },
+                { role: 'Biology Teacher', tint: 'bg-purple-50 text-purple-600', email: 'biology.teacher@demo.test', pw: 'Teacher@123456', subject: 'Biology' },
+              ].map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => {
+                    const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+                    const pwInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+                    if (emailInput) { emailInput.value = acc.email; emailInput.dispatchEvent(new Event('input', { bubbles: true })); emailInput.dispatchEvent(new Event('change', { bubbles: true })); }
+                    if (pwInput) { pwInput.value = acc.pw; pwInput.dispatchEvent(new Event('input', { bubbles: true })); pwInput.dispatchEvent(new Event('change', { bubbles: true })); }
+                  }}
+                  className="p-2.5 bg-white rounded-xl border border-surface-200 hover:border-brand-300 hover:shadow-sm transition-all text-left"
+                >
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={acc.tint + " w-1.5 h-1.5 rounded-full flex-shrink-0"} />
+                    <div className="text-[11px] font-bold text-surface-800 truncate">{acc.role}</div>
+                  </div>
+                  <div className="text-[10px] text-surface-400 truncate font-mono">{acc.email}</div>
+                </button>
+              ))}
             </div>
           </div>
 

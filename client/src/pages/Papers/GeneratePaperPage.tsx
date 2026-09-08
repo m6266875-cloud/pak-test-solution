@@ -1,590 +1,531 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from '../../store/hooks';
-import { subjectsApi } from '../../api/subjects';
-import { papersApi } from '../../api/papers';
-import { ClassItem, Subject, Chapter, Medium } from '../../types';
+/**
+ * PHASE 2 — Paper generator wizard (15 premium steps).
+ *
+ * Steps 1–8 scope (course → session → class → subject → book → chapters →
+ * topics → exercises), 9–14 configuration (type, language, marks/time,
+ * distribution builder, availability, selection incl. multi-paper), 15
+ * preview + save/finalise/duplicate/PDF. Patterns can be saved from any
+ * configured state and applied to pre-fill the whole wizard.
+ *
+ * Route: /app/papers/generate (preserved from Phase 1).
+ */
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ChevronRight, ChevronLeft, CheckCircle, BookOpen,
-  Settings, FileText, Zap, Info, GraduationCap,
-  Languages, ListChecks, Sparkles, School,
-} from 'lucide-react';
 import clsx from 'clsx';
+import {
+  AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Copy, Download, Eye,
+  FlaskConical, Loader2, Save, Sparkles,
+} from 'lucide-react';
+import { useAppSelector } from '../../store/hooks';
+import { v2 } from '../../api/v2';
+import { PageHeader } from '../../components/ui';
+import type { GeneratedPaperSummary, GeneratePaperPayload, PaperV2, PatternV2 } from '../../types';
+import type { WizardState } from './generate/state';
+import { STEPS, TYPE_SHORT, distSum, emptyWizard, fmtDate, manualPickedCount } from './generate/state';
+import ScopeSteps from './generate/stepsScope';
+import {
+  StepAvailability, StepDistribution, StepLanguage, StepMarks, StepSelection, StepType,
+} from './generate/stepsBuild';
+import { PaperDoc } from './generate/PaperDoc';
+import { PrintSheet } from './PrintSheet';
 
-// ─── Step Definitions ────────────────────────────────────────────────────────
-const STEPS = [
-  { id: 1, label: 'Board & Class',   icon: GraduationCap },
-  { id: 2, label: 'Subject',         icon: BookOpen },
-  { id: 3, label: 'Chapters',        icon: ListChecks },
-  { id: 4, label: 'Language',        icon: Languages },
-  { id: 5, label: 'Pattern & Marks', icon: Settings },
-  { id: 6, label: 'Branding',        icon: School },
-  { id: 7, label: 'Review',          icon: Sparkles },
-];
-
-// ─── Default Form State ───────────────────────────────────────────────────────
-const defaultForm = {
-  title: '',
-  classId: 0,
-  subjectIds: [] as number[],
-  chapterIds: [] as number[],
-  medium: 'english' as Medium,
-  mcq:   { count: 10, marks: 1 },
-  short: { count: 5,  marks: 3 },
-  essay: { count: 3,  marks: 10 },
-  timeLimit: 90,
-  randomize: true,
-  showAnswerKey: true,
-  showBubbleSheet: false,
-  schoolName: '',
-  ignoreMarks: { enabled: false, mcq: { attempt: 8, total: 10 } },
-  blankLines: { enabled: false, forShort: true, forEssay: true },
-};
-
-// ─── Step Indicator ───────────────────────────────────────────────────────────
-function StepIndicator({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="flex items-center justify-center gap-0 mb-8 overflow-x-auto pb-2">
-      {STEPS.map((step, i) => (
-        <div key={step.id} className="flex items-center">
-          <div className={clsx(
-            'flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap',
-            currentStep === step.id   && 'bg-brand-600 text-white shadow-brand',
-            currentStep > step.id    && 'bg-emerald-100 text-emerald-700',
-            currentStep < step.id    && 'bg-surface-100 text-surface-400',
-          )}>
-            {currentStep > step.id
-              ? <CheckCircle className="w-3.5 h-3.5" />
-              : <step.icon className="w-3.5 h-3.5" />
-            }
-            <span className="hidden md:inline">{step.label}</span>
-          </div>
-          {i < STEPS.length - 1 && (
-            <div className={clsx('w-4 lg:w-8 h-0.5 mx-0.5 flex-shrink-0', currentStep > step.id ? 'bg-emerald-300' : 'bg-surface-200')} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function GeneratePaperPage() {
-  const navigate = useNavigate();
   const { user } = useAppSelector((s) => s.auth);
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ ...defaultForm, schoolName: user?.schoolName || '' });
-  const [isGenerating, setIsGenerating] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [w, setW] = useState<WizardState>(() => emptyWizard(user?.schoolName ?? ''));
+  const set = useCallback((p: Partial<WizardState>) => setW((prev) => ({ ...prev, ...p })), []);
+  const [patterns, setPatterns] = useState<PatternV2[]>([]);
+  const [patternModal, setPatternModal] = useState(false);
+  const [patternName, setPatternName] = useState('');
+  const [patternDesc, setPatternDesc] = useState('');
+  const [patternShared, setPatternShared] = useState(false);
 
-  // Data
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [loadingSubjects, setLoadingSubjects] = useState(false);
-  const [loadingChapters, setLoadingChapters] = useState(false);
+  // generation results (step 15)
+  const [generated, setGenerated] = useState<GeneratedPaperSummary[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [generating, setGenerating] = useState(false);
+  const [papers, setPapers] = useState<Record<number, PaperV2>>({});
+  const [viewIdx, setViewIdx] = useState(0);
+  const [showKey, setShowKey] = useState(false);
+  const [printPaper, setPrintPaper] = useState<PaperV2 | null>(null);
+  const [savingMeta, setSavingMeta] = useState(false);
 
-  const totalMarks =
-    form.mcq.count * form.mcq.marks +
-    form.short.count * form.short.marks +
-    form.essay.count * form.essay.marks;
+  const step = w.step;
+  const stepDef = STEPS[step - 1];
+  const canLeave = stepDef?.canLeave(w) ?? false;
+  const inScope = step >= 1 && step <= 8;
 
-  // Load classes
+  const listPatterns = () =>
+    v2.patterns.list().then((r) => setPatterns(r.data.data as PatternV2[])).catch(() => undefined);
+
+  useEffect(() => { listPatterns(); }, []);
+
+  // deep link: /app/papers/generate?pattern=<id> pre-fills the whole wizard
+  const appliedRef = useRef(false);
   useEffect(() => {
-    subjectsApi.getClasses().then(r => setClasses(r.data.data));
-  }, []);
+    if (appliedRef.current) return;
+    const pid = new URLSearchParams(location.search).get('pattern');
+    if (!pid) return;
+    appliedRef.current = true;
+    if (!patterns.length) {
+      v2.patterns.get(Number(pid)).then((r) => {
+        const p = r.data.data as PatternV2;
+        if (p) { applyPattern(p); navigate('/app/papers/generate', { replace: true }); }
+      }).catch(() => navigate('/app/papers/generate', { replace: true }));
+      return;
+    }
+    const p = patterns.find((x) => x.id === Number(pid));
+    if (p) applyPattern(p);
+    navigate('/app/papers/generate', { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patterns]);
 
-  // Load subjects when class changes
-  useEffect(() => {
-    if (!form.classId) return;
-    setLoadingSubjects(true);
-    setSubjects([]);
-    setForm(f => ({ ...f, subjectIds: [], chapterIds: [] }));
-    subjectsApi.getSubjectsByClass(form.classId)
-      .then(r => setSubjects(r.data.data))
-      .finally(() => setLoadingSubjects(false));
-  }, [form.classId]);
-
-  // Load chapters when subjects change
-  useEffect(() => {
-    if (form.subjectIds.length === 0) { setChapters([]); return; }
-    setLoadingChapters(true);
-    setForm(f => ({ ...f, chapterIds: [] }));
-    subjectsApi.getChaptersBySubjects(form.subjectIds)
-      .then(r => setChapters(r.data.data))
-      .finally(() => setLoadingChapters(false));
-  }, [form.subjectIds]);
-
-  const toggleSubject = (id: number) => {
-    setForm(f => ({
-      ...f,
-      subjectIds: f.subjectIds.includes(id)
-        ? f.subjectIds.filter(s => s !== id)
-        : [...f.subjectIds, id],
-    }));
+  // ═══ navigation ══════════════════════════════════════════════════════════
+  const go = (n: number) => {
+    if (n < 1 || n > 15) return;
+    if (n > step) {
+      for (let i = step; i < n; i += 1) {
+        if (!STEPS[i - 1].canLeave(w)) {
+          toast.error(`Step ${i} (${STEPS[i - 1].label}) is incomplete`);
+          return;
+        }
+      }
+    }
+    set({ step: n });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toggleChapter = (id: number) => {
-    setForm(f => ({
-      ...f,
-      chapterIds: f.chapterIds.includes(id)
-        ? f.chapterIds.filter(c => c !== id)
-        : [...f.chapterIds, id],
-    }));
-  };
+  // ═══ generation ══════════════════════════════════════════════════════════
+  const buildPayload = (): GeneratePaperPayload => ({
+    courseId: w.courseId,
+    sessionId: w.sessionId,
+    classId: w.classId!,
+    subjectIds: w.subjectIds,
+    bookId: w.bookId,
+    chapterIds: w.chapterIds,
+    topicIds: w.topicIds,
+    exerciseIds: w.exerciseIds,
+    paperType: w.paperType,
+    language: w.language,
+    totalMarks: w.totalMarks,
+    distribution: w.distribution.filter((d) => d.count > 0)
+      .map((d) => ({ type: d.type, count: d.count, marks: d.marks, difficulty: d._diff })),
+    timeLimit: w.timeLimit,
+    paperCount: w.paperCount,
+    autoSelect: w.autoSelect,
+    title: w.title.trim() || undefined,
+    examTitle: w.examTitle.trim() || undefined,
+    description: w.description.trim() || undefined,
+    ...(!w.autoSelect && {
+      questionIds: w.distribution.filter((d) => d.count > 0)
+        .flatMap((d) => w.manualIds[d.type] ?? []),
+    }),
+  });
 
-  const toggleAllChapters = () => {
-    setForm(f => ({
-      ...f,
-      chapterIds: f.chapterIds.length === chapters.length ? [] : chapters.map(c => c.id),
-    }));
-  };
-
-  const canProceed = () => {
-    switch (step) {
-      case 1: return form.classId > 0;
-      case 2: return form.subjectIds.length > 0;
-      case 3: return form.chapterIds.length > 0;
-      case 4: return true;
-      case 5: return (form.mcq.count + form.short.count + form.essay.count) > 0;
-      case 6: return true;
-      default: return true;
+  const loadPaper = async (id: number, silent = false) => {
+    try {
+      const res = await v2.papers.get(id);
+      setPapers((prev) => ({ ...prev, [id]: res.data.data }));
+      return res.data.data as PaperV2;
+    } catch (e: any) {
+      if (!silent) toast.error(e?.message || 'Failed to load paper');
+      return null;
     }
   };
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
+  const runGenerate = async () => {
+    if (w.classId == null || !w.chapterIds.length) { toast.error('Finish the scope steps first'); return; }
+    if (!w.autoSelect && manualPickedCount(w) === 0) { toast.error('Pick questions manually or switch to Auto select'); return; }
+    if (distSum(w) !== w.totalMarks) { toast.error('Distribution must sum to the total marks'); return; }
+    setGenerating(true);
     try {
-      const res = await papersApi.generate(form);
-      const paperId = res.data.data.id;
-      toast.success(`Paper generated! ${totalMarks} marks, ${form.timeLimit} min`);
-      navigate(`/papers/${paperId}`);
-    } catch (err: any) {
-      const errors = err.response?.data?.errors;
-      if (errors?.length) {
-        errors.forEach((e: any) => toast.error(e.msg || e));
+      const res = await v2.papers.generate(buildPayload());
+      const data = res.data.data as { papers: GeneratedPaperSummary[]; warnings: string[] };
+      setGenerated(data.papers);
+      setWarnings(data.warnings ?? []);
+      setPapers({});
+      setViewIdx(0);
+      if (data.papers[0]) await loadPaper(data.papers[0].id, true);
+      set({ step: 15 });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.success(`${data.papers.length} paper(s) generated as draft`);
+    } catch (e: any) {
+      const body = e?.response?.data;
+      const msg = body?.message || e?.message || 'Generation failed';
+      const d = body?.details;
+      if (d?.shortages?.length) {
+        toast.error(`Insufficient approved questions: ${d.shortages.join('; ')}`);
+      } else if (Array.isArray(d)) {
+        toast.error(`${msg} ${d.map((x) => JSON.stringify(x)).join(' · ')}`);
       } else {
-        toast.error(err.response?.data?.message || 'Failed to generate paper');
+        toast.error(msg);
       }
     } finally {
-      setIsGenerating(false);
+      setGenerating(false);
     }
   };
 
+  const viewPaper = papers[generated[viewIdx]?.id ?? -1] ?? null;
+
+  const persistMeta = async (only: GeneratedPaperSummary[]) => {
+    setSavingMeta(true);
+    try {
+      for (const g of only.length ? only : generated) {
+        const p = papers[g.id];
+        if (!p) continue;
+        await v2.papers.update(g.id, {
+          title: p.title, examTitle: p.examTitle ?? undefined, status: p.status,
+        });
+        const schoolName = ((p.formatting as any)?.schoolName ?? '').trim() || null;
+        await v2.papers.updateFormatting(g.id, { schoolName });
+      }
+      return true;
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save paper details');
+      return false;
+    } finally {
+      setSavingMeta(false);
+    }
+  };
+
+  const finalise = async () => {
+    const ok = await persistMeta(generated);
+    if (!ok) return;
+    try {
+      for (const g of generated) await v2.papers.update(g.id, { status: 'final' });
+      for (const g of generated) await loadPaper(g.id, true);
+      toast.success(`${generated.length} paper(s) marked as final`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to finalise paper');
+    }
+  };
+
+  const duplicateCurrent = async () => {
+    const g = generated[viewIdx];
+    if (!g) return;
+    try {
+      const res = await v2.papers.duplicate(g.id);
+      const dup = res.data.data as PaperV2;
+      setGenerated((prev) => (prev.some((x) => x.id === dup.id)
+        ? prev
+        : [...prev, { id: dup.id, title: dup.title, totalMarks: dup.totalMarks, paperType: dup.paperType, questionCount: dup.questions?.length ?? 0, paperIndex: prev.length + 1, paperCount: prev.length + 1 }]));
+      toast.success('Duplicated as draft');
+    } catch (e: any) {
+      toast.error(e?.message || 'Duplicate failed');
+    }
+  };
+
+  // ═══ patterns ════════════════════════════════════════════════════════════
+  const patternConfig = () => ({
+    courseId: w.courseId, sessionId: w.sessionId, classId: w.classId,
+    subjectIds: w.subjectIds, bookId: w.bookId, chapterIds: w.chapterIds,
+    topicIds: w.topicIds, exerciseIds: w.exerciseIds,
+    paperType: w.paperType, language: w.language, totalMarks: w.totalMarks,
+    distribution: w.distribution.filter((d) => d.count > 0)
+      .map((d) => ({ type: d.type, count: d.count, marks: d.marks, difficulty: d._diff })),
+    timeLimit: w.timeLimit, paperCount: w.paperCount,
+    autoSelect: w.autoSelect, manualIds: w.manualIds, schoolName: w.schoolName,
+  });
+
+  const savePattern = async () => {
+    if (!patternName.trim()) { toast.error('Pattern name is required'); return; }
+    try {
+      await v2.patterns.create({
+        name: patternName.trim(), description: patternDesc.trim() || undefined,
+        config: patternConfig(), isShared: patternShared,
+      });
+      toast.success('Pattern saved');
+      setPatternModal(false);
+      setPatternName(''); setPatternDesc(''); setPatternShared(false);
+      listPatterns();
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save pattern');
+    }
+  };
+
+  const applyPattern = async (p: PatternV2) => {
+    try {
+      const cfg = (p.config ?? {}) as Record<string, any>;
+      const next: Partial<WizardState> = {
+        courseId: cfg.courseId, sessionId: cfg.sessionId, classId: cfg.classId,
+        subjectIds: cfg.subjectIds ?? [], bookId: cfg.bookId,
+        chapterIds: cfg.chapterIds ?? [], topicIds: cfg.topicIds ?? [], exerciseIds: cfg.exerciseIds ?? [],
+        paperType: cfg.paperType ?? 'mixed', language: cfg.language ?? 'english',
+        totalMarks: cfg.totalMarks ?? 75, timeLimit: cfg.timeLimit ?? 90,
+        paperCount: cfg.paperCount ?? 1, autoSelect: cfg.autoSelect !== false,
+        manualIds: cfg.manualIds ?? {}, schoolName: cfg.schoolName ?? user?.schoolName ?? '',
+        distribution: (cfg.distribution ?? []).map((d: any) => ({
+          type: d.type, count: d.count, marks: d.marks,
+          difficulty: d.difficulty === 'any' ? undefined : d.difficulty,
+          _diff: d.difficulty ?? 'any',
+        })),
+        title: '', examTitle: '', description: '',
+        step: 14,
+      };
+      set(next);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.success(`Pattern “${p.name}” applied — review & generate`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to apply pattern');
+    }
+  };
+
+  const removePattern = async (p: PatternV2) => {
+    if (!window.confirm(`Delete pattern “${p.name}”?`)) return;
+    try { await v2.patterns.remove(p.id); listPatterns(); toast.success('Pattern deleted'); }
+    catch (e: any) { toast.error(e?.message || 'Delete failed'); }
+  };
+
+  // ═══ render ══════════════════════════════════════════════════════════════
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="page-title">Generate Exam Paper</h1>
-        <p className="text-sm text-surface-500 mt-1">Create a customized paper in under 2 minutes</p>
-      </div>
-
-      <StepIndicator currentStep={step} />
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.25 }}
-        >
-          {/* ═══ STEP 1: Board & Class ═══ */}
-          {step === 1 && (
-            <div className="card p-6 space-y-6">
-              <h2 className="section-heading flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-brand-600" />
-                Select Class / Grade
-              </h2>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-                {classes.map(cls => (
-                  <button
-                    key={cls.id}
-                    onClick={() => setForm(f => ({ ...f, classId: cls.id }))}
-                    className={clsx(
-                      'py-3.5 rounded-xl text-sm font-semibold border-2 transition-all',
-                      form.classId === cls.id
-                        ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-brand/20 shadow-sm'
-                        : 'border-surface-200 hover:border-surface-300 text-surface-700 hover:bg-surface-50'
-                    )}
-                  >
-                    <div className="text-lg font-bold">{cls.grade}</div>
-                    <div className="text-xs opacity-70">Class</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ═══ STEP 2: Subject ═══ */}
-          {step === 2 && (
-            <div className="card p-6 space-y-6">
-              <h2 className="section-heading flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-brand-600" />
-                Select Subject(s)
-              </h2>
-              {loadingSubjects ? (
-                <div className="flex justify-center py-12"><div className="spinner text-brand-500" /></div>
-              ) : subjects.length === 0 ? (
-                <p className="text-sm text-surface-500 bg-surface-50 rounded-xl p-6 text-center">
-                  No subjects found for this class. Ask your admin to add subjects.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {subjects.map(sub => (
-                    <label
-                      key={sub.id}
-                      className={clsx(
-                        'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
-                        form.subjectIds.includes(sub.id)
-                          ? 'border-brand-500 bg-brand-50 shadow-sm'
-                          : 'border-surface-200 hover:border-surface-300 hover:bg-surface-50'
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={form.subjectIds.includes(sub.id)}
-                        onChange={() => toggleSubject(sub.id)}
-                      />
-                      <div>
-                        <div className="text-sm font-semibold text-surface-900">{sub.name}</div>
-                        {sub._count && (
-                          <div className="text-xs text-surface-500 mt-0.5">{sub._count.chapters} chapters</div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ═══ STEP 3: Chapters ═══ */}
-          {step === 3 && (
-            <div className="card p-6 space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="section-heading flex items-center gap-2 mb-0">
-                  <ListChecks className="w-5 h-5 text-brand-600" />
-                  Select Chapters
-                </h2>
-                <button
-                  onClick={toggleAllChapters}
-                  className="text-sm text-brand-600 hover:text-brand-700 font-semibold"
-                >
-                  {form.chapterIds.length === chapters.length ? 'Deselect All' : 'Select All'}
-                </button>
-              </div>
-
-              {loadingChapters ? (
-                <div className="flex justify-center py-12"><div className="spinner text-brand-500" /></div>
-              ) : chapters.length === 0 ? (
-                <div className="text-center py-12 text-surface-500">
-                  <BookOpen className="w-12 h-12 mx-auto mb-3 text-surface-300" />
-                  <p>No chapters found for selected subjects.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {form.subjectIds.map(sid => {
-                    const subjectChapters = chapters.filter(c => c.subjectId === sid);
-                    const subjectName = subjects.find(s => s.id === sid)?.name || '';
-                    if (subjectChapters.length === 0) return null;
-                    return (
-                      <div key={sid}>
-                        <p className="text-xs font-bold text-surface-500 uppercase tracking-wider mb-2">{subjectName}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {subjectChapters.map(ch => (
-                            <label
-                              key={ch.id}
-                              className={clsx(
-                                'flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all',
-                                form.chapterIds.includes(ch.id)
-                                  ? 'border-brand-400 bg-brand-50'
-                                  : 'border-surface-200 hover:border-surface-300 hover:bg-surface-50'
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                className="checkbox flex-shrink-0"
-                                checked={form.chapterIds.includes(ch.id)}
-                                onChange={() => toggleChapter(ch.id)}
-                              />
-                              <div className="min-w-0">
-                                <span className="text-sm font-medium text-surface-900">
-                                  Ch {ch.number}. {ch.name}
-                                </span>
-                                {ch._count && (
-                                  <span className="ml-2 text-xs text-surface-400 font-medium">
-                                    {ch._count.questions} questions
-                                  </span>
-                                )}
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ═══ STEP 4: Language ═══ */}
-          {step === 4 && (
-            <div className="card p-6 space-y-6">
-              <h2 className="section-heading flex items-center gap-2">
-                <Languages className="w-5 h-5 text-brand-600" />
-                Medium of Instruction
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { value: 'english', label: 'English Medium', desc: 'Paper will be in English' },
-                  { value: 'urdu', label: 'Urdu Medium', desc: 'اردو میں پرچہ — RTL layout' },
-                  { value: 'bilingual', label: 'Dual Medium', desc: 'Both English and Urdu' },
-                ].map(m => (
-                  <button
-                    key={m.value}
-                    onClick={() => setForm(f => ({ ...f, medium: m.value as Medium }))}
-                    className={clsx(
-                      'p-5 rounded-xl border-2 text-left transition-all',
-                      form.medium === m.value
-                        ? 'border-brand-500 bg-brand-50 shadow-sm'
-                        : 'border-surface-200 hover:border-surface-300 hover:bg-surface-50'
-                    )}
-                  >
-                    <div className="text-base font-bold text-surface-900 mb-1">{m.label}</div>
-                    <div className="text-xs text-surface-500">{m.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ═══ STEP 5: Pattern & Marks ═══ */}
-          {step === 5 && (
-            <div className="card p-6 space-y-6">
-              <h2 className="section-heading flex items-center gap-2">
-                <Settings className="w-5 h-5 text-brand-600" />
-                Question Distribution & Marks
-              </h2>
-
-              {/* Title */}
-              <div>
-                <label className="label">Paper Title (optional)</label>
-                <input
-                  className="input"
-                  value={form.title}
-                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="Leave blank for auto-generated title"
-                />
-              </div>
-
-              {/* Question types */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {(['mcq', 'short', 'essay'] as const).map(type => (
-                  <div key={type} className="bg-surface-50 rounded-2xl p-5 border border-surface-200">
-                    <div className="text-xs font-bold text-surface-500 uppercase tracking-wider mb-4">
-                      {type === 'mcq' ? 'MCQs' : type === 'short' ? 'Short Questions' : 'Essay Questions'}
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs text-surface-500 font-medium">Count</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={type === 'mcq' ? 50 : type === 'short' ? 20 : 10}
-                          className="input mt-1"
-                          value={form[type].count}
-                          onChange={e => setForm(f => ({ ...f, [type]: { ...f[type], count: Number(e.target.value) } }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-surface-500 font-medium">Marks each</label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={20}
-                          className="input mt-1"
-                          value={form[type].marks}
-                          onChange={e => setForm(f => ({ ...f, [type]: { ...f[type], marks: Number(e.target.value) } }))}
-                        />
-                      </div>
-                      <div className="text-sm font-bold text-brand-600 pt-2 border-t border-surface-200">
-                        = {form[type].count * form[type].marks} marks
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Total marks */}
-              <div className="px-5 py-4 bg-brand-50 rounded-xl flex items-center justify-between border border-brand-100">
-                <span className="text-sm text-brand-700 font-semibold">Total Marks</span>
-                <span className="text-2xl font-bold text-brand-900 font-display">{totalMarks}</span>
-              </div>
-
-              {/* Time Limit */}
-              <div>
-                <label className="label">Time Limit</label>
-                <div className="flex gap-2 flex-wrap">
-                  {[30, 45, 60, 90, 120, 180].map(t => (
-                    <button
-                      key={t}
-                      onClick={() => setForm(f => ({ ...f, timeLimit: t }))}
-                      className={clsx(
-                        'px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all',
-                        form.timeLimit === t
-                          ? 'border-brand-500 bg-brand-50 text-brand-700'
-                          : 'border-surface-200 hover:border-surface-300 text-surface-700'
-                      )}
-                    >
-                      {t} min
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Options */}
-              <div className="space-y-4 pt-2">
-                <Toggle checked={form.randomize} onChange={v => setForm(f => ({ ...f, randomize: v }))} label="Randomize questions" desc="Shuffle questions randomly for exam integrity" />
-                <Toggle checked={form.showAnswerKey} onChange={v => setForm(f => ({ ...f, showAnswerKey: v }))} label="Include answer key" desc="Add MCQ answer key page to the PDF" />
-                <Toggle checked={form.showBubbleSheet} onChange={v => setForm(f => ({ ...f, showBubbleSheet: v }))} label="Include OMR bubble sheet" desc="Add bubble sheet for MCQ answers" />
-                <Toggle checked={form.blankLines.enabled} onChange={v => setForm(f => ({ ...f, blankLines: { ...f.blankLines, enabled: v } }))} label="Add blank answer lines" desc="Include lines for short/essay answers" />
-              </div>
-            </div>
-          )}
-
-          {/* ═══ STEP 6: School Branding ═══ */}
-          {step === 6 && (
-            <div className="card p-6 space-y-6">
-              <h2 className="section-heading flex items-center gap-2">
-                <School className="w-5 h-5 text-brand-600" />
-                School Branding
-              </h2>
-              <div>
-                <label className="label">School / Institution Name</label>
-                <input
-                  className="input"
-                  value={form.schoolName}
-                  onChange={e => setForm(f => ({ ...f, schoolName: e.target.value }))}
-                  placeholder="e.g. Government High School, Lahore"
-                />
-                <p className="text-xs text-surface-500 mt-1.5">This will appear in the paper header on every generated PDF.</p>
-              </div>
-            </div>
-          )}
-
-          {/* ═══ STEP 7: Review & Generate ═══ */}
-          {step === 7 && (
-            <div className="space-y-5">
-              <div className="card p-6">
-                <h2 className="section-heading flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-brand-600" />
-                  Review Your Paper
-                </h2>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <ReviewRow label="Class" value={classes.find(c => c.id === form.classId)?.name || ''} />
-                  <ReviewRow label="Medium" value={form.medium} capitalize />
-                  <ReviewRow label="Subjects" value={subjects.filter(s => form.subjectIds.includes(s.id)).map(s => s.name).join(', ')} />
-                  <ReviewRow label="Chapters" value={`${form.chapterIds.length} selected`} />
-                  <ReviewRow label="MCQs" value={`${form.mcq.count} × ${form.mcq.marks} = ${form.mcq.count * form.mcq.marks}`} />
-                  <ReviewRow label="Short Qs" value={`${form.short.count} × ${form.short.marks} = ${form.short.count * form.short.marks}`} />
-                  <ReviewRow label="Essay Qs" value={`${form.essay.count} × ${form.essay.marks} = ${form.essay.count * form.essay.marks}`} />
-                  <ReviewRow label="Time Limit" value={`${form.timeLimit} minutes`} />
-                  <ReviewRow label="School" value={form.schoolName || 'Not set'} />
-                  <ReviewRow label="Randomized" value={form.randomize ? 'Yes' : 'No'} />
-                </div>
-
-                <div className="mt-6 pt-5 border-t border-surface-100 flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-bold text-brand-600 font-display">{totalMarks}</div>
-                    <div className="text-sm text-surface-500">Total marks</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-semibold text-surface-900">{form.timeLimit} min</div>
-                    <div className="text-sm text-surface-500">Duration</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-                <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-800">
-                  The system will select questions from your chosen chapters. If there aren't enough questions, you'll be notified.
-                </p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* ═══ NAVIGATION ═══ */}
-      <div className="flex items-center justify-between mt-8">
-        <button
-          onClick={() => setStep(s => Math.max(1, s - 1))}
-          disabled={step === 1}
-          className="btn-secondary"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
-
-        {step < STEPS.length ? (
-          <button
-            onClick={() => setStep(s => s + 1)}
-            disabled={!canProceed()}
-            className="btn-primary"
-          >
-            Next <ChevronRight className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="btn-primary btn-lg"
-          >
-            {isGenerating ? (
-              <><span className="spinner" /> Generating Paper...</>
-            ) : (
-              <><Zap className="w-5 h-5" /> Generate Paper</>
-            )}
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <PageHeader
+        title="Paper Generator"
+        description="Premium 15-step flow — scope, configure, check availability, select, preview, save."
+        action={(
+          <button className="btn-ghost btn-sm" onClick={() => setPatternModal(true)}>
+            <Save className="w-4 h-4" /> Save as pattern
           </button>
         )}
+      />
+
+      {/* patterns strip */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="text-xs font-bold text-surface-400 uppercase tracking-wide flex items-center gap-1">
+          <Sparkles className="w-3.5 h-3.5" /> Patterns
+        </span>
+        {patterns.length === 0 && <span className="text-xs text-surface-400">None yet — configure once, then “Save as pattern”.</span>}
+        {patterns.map((p) => (
+          <span key={p.id} className="inline-flex items-center gap-1 text-xs font-semibold bg-surface-100 text-surface-700 rounded-full py-1 pl-2 pr-1">
+            {p.isShared && <span className="text-[9px] font-extrabold bg-brand-600 text-white px-1.5 py-0.5 rounded-full">shared</span>}
+            <button type="button" className="hover:text-brand-700 font-bold" title="Apply this pattern (pre-fills all steps)" onClick={() => applyPattern(p)}>
+              {p.name}
+            </button>
+            {p.ownerName && p.ownerName !== user?.name && <span className="text-surface-400 font-normal">· {p.ownerName}</span>}
+            <button type="button" className="p-1 text-surface-400 hover:text-rose-500" title="Delete pattern" onClick={() => removePattern(p)}>
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </span>
+        ))}
       </div>
+
+      {/* step rail */}
+      <div className="card p-3 mb-4 overflow-x-auto no-print">
+        <div className="flex items-center min-w-max gap-1">
+          {STEPS.map((s) => {
+            const past = s.n < step;
+            const current = s.n === step;
+            return (
+              <button key={s.n} type="button"
+                onClick={() => s.n <= step && go(s.n)}
+                className={clsx('flex flex-col items-center px-2.5 py-1.5 rounded-xl transition-all min-w-[52px]', s.n <= step ? 'hover:bg-surface-50 cursor-pointer' : 'cursor-not-allowed opacity-35')}>
+                <span className={clsx('w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold mb-1 border-2',
+                  current ? 'bg-brand-600 border-brand-600 text-white shadow-brand'
+                    : past ? 'bg-emerald-50 border-emerald-400 text-emerald-600' : 'bg-white border-surface-200 text-surface-400')}>
+                  {past ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.n}
+                </span>
+                <span className={clsx('text-[9.5px] font-bold uppercase tracking-wide', current ? 'text-brand-700' : 'text-surface-500')}>
+                  {s.label.length > 9 ? `${s.label.slice(0, 8)}…` : s.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* step content */}
+      <div className="card p-5 md:p-7 mb-4 animate-fade-in" key={`step-${step}`}>
+        {inScope && <ScopeSteps w={w} set={set} onEnter={(n) => go(n)} />}
+        {step === 9 && <StepType w={w} set={set} />}
+        {step === 10 && <StepLanguage w={w} set={set} />}
+        {step === 11 && <StepMarks w={w} set={set} />}
+        {step === 12 && <StepDistribution w={w} set={set} />}
+        {step === 13 && <StepAvailability w={w} set={set} />}
+        {step === 14 && <StepSelection w={w} set={set} />}
+        {step === 15 && <StepPreview />}
+      </div>
+
+      {/* bottom nav */}
+      {step < 15 && (
+        <div className="flex items-center justify-between gap-3">
+          <button className="btn-ghost" disabled={step <= 1} onClick={() => go(step - 1)}>
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
+          {step === 14 ? (
+            <button className="btn-primary" disabled={generating} onClick={runGenerate}>
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+              {generating ? 'Generating…' : `Generate ${w.paperCount > 1 ? `${w.paperCount} papers` : 'paper'} & preview`}
+            </button>
+          ) : (
+            <button className={clsx('btn-primary', !canLeave && 'opacity-40')}
+              onClick={() => { if (!canLeave) { toast.error(`Step ${step} (${stepDef.label}) is incomplete`); return; } go(step + 1); }}>
+              Next <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* pattern modal */}
+      {patternModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-surface-900/50 backdrop-blur-sm" onClick={() => setPatternModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 animate-slide-down">
+            <h3 className="font-bold text-lg">Save configuration as pattern</h3>
+            <p className="text-xs text-surface-500 mb-4">Scope + distribution reusable in one click. Private unless shared.</p>
+            <label className="label">Name *</label>
+            <input className="input mb-3" placeholder="e.g. Grade 9 Math — Mixed 75" value={patternName} onChange={(e) => setPatternName(e.target.value)} />
+            <label className="label">Description</label>
+            <textarea className="textarea mb-3" rows={2} placeholder="Optional note…" value={patternDesc} onChange={(e) => setPatternDesc(e.target.value)} />
+            <label className="flex items-center gap-2 text-sm font-semibold text-surface-700 mb-4">
+              <input type="checkbox" className="w-4 h-4 accent-brand-600" checked={patternShared} onChange={(e) => setPatternShared(e.target.checked)} />
+              Share with teachers in your organisation
+            </label>
+            <div className="flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setPatternModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={savePattern}><Save className="w-4 h-4" /> Save pattern</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* print sheet */}
+      {printPaper && <PrintSheet paper={printPaper} onClose={() => setPrintPaper(null)} />}
     </div>
   );
-}
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange, label, desc }: {
-  checked: boolean; onChange: (v: boolean) => void; label: string; desc: string;
-}) {
-  return (
-    <label className="flex items-start gap-3 cursor-pointer group">
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={clsx('relative mt-0.5 w-11 h-6 rounded-full transition-colors flex-shrink-0', checked ? 'bg-brand-600' : 'bg-surface-200')}
-      >
-        <div className={clsx(
-          'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform',
-          checked && 'translate-x-5'
-        )} />
-      </button>
-      <div>
-        <div className="text-sm font-medium text-surface-900">{label}</div>
-        <div className="text-xs text-surface-500">{desc}</div>
+  // ─── step 15 ──────────────────────────────────────────────────────────────
+  function StepPreview() {
+    return (
+      <div className="space-y-4">
+        {warnings.length > 0 && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+            <p className="text-sm font-bold text-amber-800 flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4" /> Honest pool warnings
+            </p>
+            <ul className="list-disc ml-5 text-xs text-amber-700 space-y-0.5">{warnings.map((x, i) => <li key={i}>{x}</li>)}</ul>
+          </div>
+        )}
+
+        {!generated.length ? (
+          <div className="flex flex-col items-center gap-3 py-14 text-center">
+            <p className="text-sm text-surface-500">Nothing generated yet — run generation from step 14.</p>
+            <button className="btn-primary btn-sm" onClick={() => go(14)}>Back to selection</button>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-surface-400 uppercase tracking-wide">Batch ({generated.length})</span>
+              {generated.map((g, i) => (
+                <button key={g.id} type="button"
+                  onClick={() => { setViewIdx(i); if (!papers[g.id]) loadPaper(g.id); }}
+                  className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border transition-all',
+                    i === viewIdx ? 'bg-brand-600 text-white border-brand-600' : 'bg-white border-surface-200 text-surface-600 hover:border-brand-300')}>
+                  {generated.length > 1 ? `Paper ${i + 1}` : 'Paper'} · {g.totalMarks} marks
+                </button>
+              ))}
+            </div>
+
+            {!viewPaper ? (
+              <div className="flex items-center gap-2 justify-center py-6 text-surface-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading paper preview…
+              </div>
+            ) : (
+              <>
+                {/* meta editing */}
+                <div className="card p-4 grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Paper title</label>
+                    <input className="input" value={viewPaper.title}
+                      onChange={(e) => setPapers((prev) => ({ ...prev, [viewPaper.id]: { ...viewPaper, title: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <label className="label">Exam title (printed header)</label>
+                    <input className="input" placeholder="e.g. Class 9 — Mid Term Examination"
+                      value={viewPaper.examTitle ?? ''}
+                      onChange={(e) => setPapers((prev) => ({ ...prev, [viewPaper.id]: { ...viewPaper, examTitle: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <label className="label">School name (printed header)</label>
+                    <input className="input"
+                      value={(viewPaper.formatting as any)?.schoolName ?? ''}
+                      placeholder={user?.schoolName ?? 'School name'}
+                      onChange={(e) => setPapers((prev) => ({
+                        ...prev,
+                        [viewPaper.id]: { ...viewPaper, formatting: { ...(viewPaper.formatting ?? {}), schoolName: e.target.value } },
+                      }))} />
+                  </div>
+                  <div className="flex items-end">
+                    <p className="text-xs text-surface-400">
+                      {viewPaper.className} · {viewPaper.courseName ?? ''} · {viewPaper.medium} · {viewPaper.timeLimit ?? 90} min ·
+                      {viewPaper.paperType} · created {fmtDate(viewPaper.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* composition chips */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  {groupCounts(viewPaper).map(([t, n, m]) => (
+                    <span key={t} className="text-xs font-bold bg-surface-100 text-surface-600 px-2.5 py-1 rounded-full">
+                      {TYPE_SHORT[t]} × {n} @ {m} = {n * m}
+                    </span>
+                  ))}
+                  <span className={clsx('text-xs font-extrabold px-2.5 py-1 rounded-full',
+                    sumMarks(viewPaper) === viewPaper.totalMarks ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}>
+                    Σ {sumMarks(viewPaper)} / {viewPaper.totalMarks} marks
+                  </span>
+                </div>
+
+                {/* doc */}
+                <div className="rounded-2xl border border-surface-200 bg-surface-100/60 p-3 md:p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3 no-print">
+                    <div className="flex items-center gap-2">
+                      <button className={clsx('btn-sm', showKey ? 'btn-primary' : 'btn-ghost')} onClick={() => setShowKey(!showKey)}>
+                        <Eye className="w-4 h-4" /> {showKey ? 'Answer key on' : 'Answer key'}
+                      </button>
+                      <span className="text-[11px] text-surface-400">bubble letters · matching columns · Urdu RTL</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button className="btn-ghost btn-sm" onClick={duplicateCurrent}><Copy className="w-4 h-4" /> Duplicate</button>
+                      <button className="btn-secondary btn-sm" onClick={() => setPrintPaper(viewPaper)}>
+                        <Download className="w-4 h-4" /> Print / PDF
+                      </button>
+                    </div>
+                  </div>
+                  <PaperDoc paper={viewPaper} showKey={showKey} />
+                </div>
+
+                {/* save row */}
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <button className="btn-ghost" onClick={() => go(14)}><ArrowLeft className="w-4 h-4" /> Adjust selection</button>
+                  <button className="btn-ghost" disabled={savingMeta}
+                    onClick={async () => { if (await persistMeta(generated)) toast.success('Details saved'); }}>
+                    {savingMeta ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save details
+                  </button>
+                  <button className="btn-success" disabled={viewPaper.status === 'final'} onClick={finalise}>
+                    <CheckCircle2 className="w-4 h-4" />
+                    {viewPaper.status === 'final' ? 'Paper is final' : `Mark ${generated.length > 1 ? `all ${generated.length}` : 'paper'} as final`}
+                  </button>
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
-    </label>
-  );
+    );
+  }
 }
 
-function ReviewRow({ label, value, capitalize }: { label: string; value: string; capitalize?: boolean }) {
-  return (
-    <div className="flex justify-between gap-4 py-2.5 border-b border-surface-50">
-      <span className="text-sm text-surface-500">{label}</span>
-      <span className={clsx('text-sm font-semibold text-surface-900 text-right', capitalize && 'capitalize')}>{value}</span>
-    </div>
-  );
-}
+// ─── helpers ────────────────────────────────────────────────────────────────
+const groupCounts = (p: PaperV2): Array<[string, number, number]> => {
+  const by = new Map<string, { n: number; m: number }>();
+  (p.questions ?? []).forEach((q) => {
+    const t = q.snapshotType || q.type;
+    const cur = by.get(t) ?? { n: 0, m: q.marks ?? 1 };
+    cur.n += 1;
+    by.set(t, cur);
+  });
+  return [...by.entries()].map(([t, v]) => [t, v.n, v.m]);
+};
+const sumMarks = (p: PaperV2) => (p.questions ?? []).reduce((a, q) => a + (q.marks ?? 1), 0);
