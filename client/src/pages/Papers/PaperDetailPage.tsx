@@ -4,9 +4,10 @@ import { papersApi } from '../../api/papers';
 import { Paper, PaperStatus } from '../../types';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { StatusBadge, Tabs } from '../../components/ui';
 import {
   ArrowLeft, Download, Edit3, Check, X, BookOpen,
-  Clock, Award, FileText, Eye, Printer, Settings, Archive,
+  Clock, Award, FileText, Eye, Archive, Settings,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -19,7 +20,7 @@ export default function PaperDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
-  const [activeTab, setActiveTab] = useState<'preview' | 'formatting' | 'settings'>('preview');
+  const [activeTab, setActiveTab] = useState('preview');
   const [saving, setSaving] = useState(false);
   const [formatting, setFormatting] = useState<any>({});
 
@@ -29,7 +30,7 @@ export default function PaperDetailPage() {
         setPaper(r.data.data);
         setFormatting(r.data.data.paperFormatting || {});
       })
-      .catch(() => { toast.error('Paper not found'); navigate('/papers'); })
+      .catch(() => { toast.error('Paper not found'); navigate('/app/papers'); })
       .finally(() => setLoading(false));
   }, [paperId]);
 
@@ -65,7 +66,7 @@ export default function PaperDetailPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-96">
-      <div className="spinner text-primary-500 w-8 h-8" />
+      <div className="spinner-lg text-brand-500" />
     </div>
   );
 
@@ -76,161 +77,136 @@ export default function PaperDetailPage() {
   const essayQs = paper.paperQuestions.filter(pq => pq.question.type === 'essay').sort((a, b) => a.order - b.order);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-5">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link to="/app/papers" className="btn-ghost mt-0.5 p-2">
+        <Link to="/app/papers" className="btn-ghost p-2.5 mt-0.5">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1 min-w-0">
           {editingTitle ? (
             <div className="flex items-center gap-2">
               <input
-                className="input text-xl font-bold py-1"
+                className="input text-xl font-bold py-1.5"
                 value={titleInput}
                 onChange={e => setTitleInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && saveTitle()}
                 autoFocus
               />
-              <button onClick={saveTitle} disabled={saving} className="btn-primary py-1.5 px-3">
+              <button onClick={saveTitle} disabled={saving} className="btn-primary btn-sm">
                 <Check className="w-4 h-4" />
               </button>
-              <button onClick={() => setEditingTitle(false)} className="btn-secondary py-1.5 px-3">
+              <button onClick={() => setEditingTitle(false)} className="btn-secondary btn-sm">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900 truncate">{paper.title}</h1>
+              <h1 className="page-title truncate">{paper.title}</h1>
               <button
                 onClick={() => { setTitleInput(paper.title); setEditingTitle(true); }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-surface-400 hover:text-surface-600 transition-colors"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
             </div>
           )}
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
             <StatusBadge status={paper.status} />
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-surface-500">
               {paper.class.name} · {paper.paperSubjects.map(ps => ps.subject.name).join(', ')}
             </span>
-            <span className="text-sm text-gray-400">
-              Created {format(new Date(paper.createdAt), 'dd MMM yyyy')}
+            <span className="text-sm text-surface-400">
+              {format(new Date(paper.createdAt), 'dd MMM yyyy')}
             </span>
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {paper.status === 'draft' && (
-            <button
-              onClick={() => updateStatus('final')}
-              disabled={saving}
-              className="btn-secondary text-sm"
-            >
-              <Check className="w-4 h-4" /> Mark Final
+            <button onClick={() => updateStatus('final')} disabled={saving} className="btn-success btn-sm">
+              <Check className="w-4 h-4" /> Finalize
             </button>
           )}
-          {paper.status !== 'archived' && (
-            <button
-              onClick={() => updateStatus('archived')}
-              disabled={saving}
-              className="btn-ghost text-sm"
-            >
-              <Archive className="w-4 h-4" />
-            </button>
-          )}
-          <a
-            href={papersApi.getPreviewUrl(paperId)}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secondary text-sm"
-          >
+          <a href={papersApi.getPreviewUrl(paperId)} target="_blank" rel="noreferrer" className="btn-secondary btn-sm">
             <Eye className="w-4 h-4" /> Preview
           </a>
-          <a
-            href={papersApi.getDownloadUrl(paperId)}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-primary text-sm"
-          >
-            <Download className="w-4 h-4" /> Download PDF
+          <a href={papersApi.getDownloadUrl(paperId)} target="_blank" rel="noreferrer" className="btn-primary btn-sm">
+            <Download className="w-4 h-4" /> PDF
           </a>
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-4 gap-3">
-        <MiniStat icon={Award} label="Total Marks" value={paper.totalMarks} color="text-blue-600" />
-        <MiniStat icon={Clock} label="Duration" value={`${paper.timeLimit} min`} color="text-green-600" />
-        <MiniStat icon={FileText} label="Questions" value={paper.paperQuestions.length} color="text-purple-600" />
-        <MiniStat icon={BookOpen} label="Medium" value={paper.medium} color="text-amber-600" capitalize />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { key: 'preview', label: 'Paper Preview', icon: Eye },
-          { key: 'formatting', label: 'Formatting', icon: Settings },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            className={clsx(
-              'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
-              activeTab === tab.key
-                ? 'border-primary-600 text-primary-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            )}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
+          { icon: Award, label: 'Total Marks', value: paper.totalMarks, color: 'text-brand-600 bg-brand-50' },
+          { icon: Clock, label: 'Duration', value: `${paper.timeLimit} min`, color: 'text-emerald-600 bg-emerald-50' },
+          { icon: FileText, label: 'Questions', value: paper.paperQuestions.length, color: 'text-purple-600 bg-purple-50' },
+          { icon: BookOpen, label: 'Medium', value: paper.medium, color: 'text-amber-600 bg-amber-50', capitalize: true },
+        ].map(stat => (
+          <div key={stat.label} className="card p-4 flex items-center gap-3">
+            <div className={clsx('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', stat.color)}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className={clsx('text-sm font-bold text-surface-900', stat.capitalize && 'capitalize')}>{stat.value}</div>
+              <div className="text-xs text-surface-500">{stat.label}</div>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Preview Tab */}
+      {/* Tabs */}
+      <Tabs
+        tabs={[
+          { key: 'preview', label: 'Paper Preview', icon: Eye },
+          { key: 'formatting', label: 'Formatting', icon: Settings },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
+
+      {/* Preview */}
       {activeTab === 'preview' && (
         <div className="card p-8 max-w-3xl mx-auto" style={{ fontFamily: formatting.fontFamily || 'Arial' }}>
-          {/* Paper Header */}
-          <div className="text-center border-b-2 border-black pb-4 mb-5">
+          <div className="text-center border-b-2 border-surface-900 pb-4 mb-5">
             <div className="text-xl font-bold uppercase tracking-wide">
               {formatting.schoolName || paper.paperFormatting?.schoolName || 'School Name'}
             </div>
             <div className="font-semibold mt-1">{paper.title}</div>
-            <div className="text-sm text-gray-600 mt-1">
+            <div className="text-sm text-surface-600 mt-1">
               {paper.paperSubjects.map(ps => ps.subject.name).join(', ')} · {paper.medium.charAt(0).toUpperCase() + paper.medium.slice(1)} Medium
             </div>
-            <div className="grid grid-cols-3 border border-black mt-3 text-sm">
-              <div className="border-r border-black p-2 text-center">
-                <div className="text-xs text-gray-500">Class</div>
+            <div className="grid grid-cols-3 border border-surface-900 mt-3 text-sm">
+              <div className="border-r border-surface-900 p-2 text-center">
+                <div className="text-xs text-surface-500">Class</div>
                 <div className="font-bold">{paper.class.name}</div>
               </div>
-              <div className="border-r border-black p-2 text-center">
-                <div className="text-xs text-gray-500">Total Marks</div>
+              <div className="border-r border-surface-900 p-2 text-center">
+                <div className="text-xs text-surface-500">Total Marks</div>
                 <div className="font-bold">{paper.totalMarks}</div>
               </div>
               <div className="p-2 text-center">
-                <div className="text-xs text-gray-500">Time</div>
+                <div className="text-xs text-surface-500">Time</div>
                 <div className="font-bold">{paper.timeLimit} min</div>
               </div>
             </div>
           </div>
 
           {/* Student Info */}
-          <div className="grid grid-cols-3 border border-black text-sm mb-5">
-            <div className="border-r border-black p-2">Name: <span className="inline-block w-24 border-b border-black" /></div>
-            <div className="border-r border-black p-2">Roll No: <span className="inline-block w-16 border-b border-black" /></div>
-            <div className="p-2">Date: <span className="inline-block w-20 border-b border-black" /></div>
+          <div className="grid grid-cols-3 border border-surface-900 text-sm mb-5">
+            <div className="border-r border-surface-900 p-2">Name: <span className="inline-block w-24 border-b border-surface-400" /></div>
+            <div className="border-r border-surface-900 p-2">Roll No: <span className="inline-block w-16 border-b border-surface-400" /></div>
+            <div className="p-2">Date: <span className="inline-block w-20 border-b border-surface-400" /></div>
           </div>
 
           {/* Section A: MCQs */}
           {mcqQs.length > 0 && (
             <div className="mb-6">
-              <div className="bg-gray-100 px-3 py-2 font-bold text-sm border-b border-gray-300 mb-3">
+              <div className="bg-surface-100 px-3 py-2 font-bold text-sm border-b border-surface-300 mb-3">
                 Section A — Multiple Choice Questions
-                <span className="float-right font-normal text-gray-600">
+                <span className="float-right font-normal text-surface-600">
                   ({mcqQs.length} × {paper.paperSettings?.mcqMarks || 1} = {mcqQs.length * (paper.paperSettings?.mcqMarks || 1)} Marks)
                 </span>
               </div>
@@ -239,11 +215,9 @@ export default function PaperDetailPage() {
                   <div key={pq.id} className="text-sm">
                     <div className="font-medium">Q{i + 1}. {pq.question.text}</div>
                     {pq.question.options && (
-                      <div className="grid grid-cols-2 gap-x-4 mt-1 ml-4 text-gray-700">
+                      <div className="grid grid-cols-2 gap-x-4 mt-1 ml-4 text-surface-700">
                         {(pq.question.options as string[]).map((opt, oi) => (
-                          <div key={oi}>
-                            <span className="font-medium">{String.fromCharCode(65 + oi)}.</span> {opt}
-                          </div>
+                          <div key={oi}><span className="font-medium">{String.fromCharCode(65 + oi)}.</span> {opt}</div>
                         ))}
                       </div>
                     )}
@@ -256,24 +230,15 @@ export default function PaperDetailPage() {
           {/* Section B: Short */}
           {shortQs.length > 0 && (
             <div className="mb-6">
-              <div className="bg-gray-100 px-3 py-2 font-bold text-sm border-b border-gray-300 mb-3">
+              <div className="bg-surface-100 px-3 py-2 font-bold text-sm border-b border-surface-300 mb-3">
                 Section B — Short Questions
-                <span className="float-right font-normal text-gray-600">
+                <span className="float-right font-normal text-surface-600">
                   ({shortQs.length} × {paper.paperSettings?.shortMarks || 3} = {shortQs.length * (paper.paperSettings?.shortMarks || 3)} Marks)
                 </span>
               </div>
               <div className="space-y-3">
                 {shortQs.map((pq, i) => (
-                  <div key={pq.id} className="text-sm">
-                    <div className="font-medium">Q{i + 1}. {pq.question.text}</div>
-                    {paper.paperSettings?.blankLines?.enabled && paper.paperSettings.blankLines.forShort && (
-                      <div className="mt-2 space-y-3">
-                        {[...Array(4)].map((_, j) => (
-                          <div key={j} className="border-b border-dotted border-gray-300 h-5" />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <div key={pq.id} className="text-sm font-medium">Q{i + 1}. {pq.question.text}</div>
                 ))}
               </div>
             </div>
@@ -282,17 +247,15 @@ export default function PaperDetailPage() {
           {/* Section C: Essay */}
           {essayQs.length > 0 && (
             <div className="mb-6">
-              <div className="bg-gray-100 px-3 py-2 font-bold text-sm border-b border-gray-300 mb-3">
+              <div className="bg-surface-100 px-3 py-2 font-bold text-sm border-b border-surface-300 mb-3">
                 Section C — Essay / Long Questions
-                <span className="float-right font-normal text-gray-600">
+                <span className="float-right font-normal text-surface-600">
                   ({essayQs.length} × {paper.paperSettings?.essayMarks || 10} = {essayQs.length * (paper.paperSettings?.essayMarks || 10)} Marks)
                 </span>
               </div>
               <div className="space-y-4">
                 {essayQs.map((pq, i) => (
-                  <div key={pq.id} className="text-sm">
-                    <div className="font-medium">Q{i + 1}. {pq.question.text}</div>
-                  </div>
+                  <div key={pq.id} className="text-sm font-medium">Q{i + 1}. {pq.question.text}</div>
                 ))}
               </div>
             </div>
@@ -300,12 +263,12 @@ export default function PaperDetailPage() {
 
           {/* Answer Key */}
           {paper.paperSettings?.showAnswerKey && mcqQs.some(pq => pq.question.answer) && (
-            <div className="mt-8 pt-5 border-t-2 border-dashed border-gray-300">
+            <div className="mt-8 pt-5 border-t-2 border-dashed border-surface-300">
               <div className="font-bold text-sm mb-3">Answer Key — MCQs</div>
               <div className="grid grid-cols-5 gap-1.5">
                 {mcqQs.map((pq, i) => (
-                  <div key={pq.id} className="text-center bg-gray-50 border border-gray-200 rounded p-1.5">
-                    <div className="text-xs text-gray-500">Q{i + 1}</div>
+                  <div key={pq.id} className="text-center bg-surface-50 border border-surface-200 rounded-lg p-1.5">
+                    <div className="text-xs text-surface-500">Q{i + 1}</div>
                     <div className="font-bold text-sm">{pq.question.answer || '—'}</div>
                   </div>
                 ))}
@@ -313,35 +276,24 @@ export default function PaperDetailPage() {
             </div>
           )}
 
-          {/* Footer */}
-          <div className="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
-            Generated by Pak Test Solution · {format(new Date(paper.createdAt), 'dd MMM yyyy')}
+          <div className="mt-8 pt-4 border-t border-surface-100 text-center text-xs text-surface-400">
+            Generated by Pak Test Software · {format(new Date(paper.createdAt), 'dd MMM yyyy')}
           </div>
         </div>
       )}
 
-      {/* Formatting Tab */}
+      {/* Formatting */}
       {activeTab === 'formatting' && (
         <div className="card p-6 max-w-2xl space-y-5">
-          <h2 className="section-heading">PDF Formatting Options</h2>
-
+          <h2 className="section-heading">PDF Formatting</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">School Name (header)</label>
-              <input
-                className="input"
-                value={formatting.schoolName || ''}
-                onChange={e => setFormatting((f: any) => ({ ...f, schoolName: e.target.value }))}
-                placeholder="Government High School, Lahore"
-              />
+              <label className="label">School Name</label>
+              <input className="input" value={formatting.schoolName || ''} onChange={e => setFormatting((f: any) => ({ ...f, schoolName: e.target.value }))} />
             </div>
             <div>
               <label className="label">Font Family</label>
-              <select
-                className="select"
-                value={formatting.fontFamily || 'Arial'}
-                onChange={e => setFormatting((f: any) => ({ ...f, fontFamily: e.target.value }))}
-              >
+              <select className="select" value={formatting.fontFamily || 'Arial'} onChange={e => setFormatting((f: any) => ({ ...f, fontFamily: e.target.value }))}>
                 <option value="Arial">Arial</option>
                 <option value="Times New Roman">Times New Roman</option>
                 <option value="Georgia">Georgia</option>
@@ -350,49 +302,11 @@ export default function PaperDetailPage() {
             </div>
             <div>
               <label className="label">Font Size (pt)</label>
-              <input
-                type="number"
-                className="input"
-                value={formatting.fontSize || 12}
-                onChange={e => setFormatting((f: any) => ({ ...f, fontSize: Number(e.target.value) }))}
-                min={9}
-                max={16}
-              />
-            </div>
-            <div>
-              <label className="label">School Name Size (pt)</label>
-              <input
-                type="number"
-                className="input"
-                value={formatting.schoolNameSize || 16}
-                onChange={e => setFormatting((f: any) => ({ ...f, schoolNameSize: Number(e.target.value) }))}
-                min={12}
-                max={28}
-              />
-            </div>
-            <div>
-              <label className="label">Text Color</label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  className="w-12 h-9 rounded border border-gray-200 cursor-pointer"
-                  value={formatting.color || '#000000'}
-                  onChange={e => setFormatting((f: any) => ({ ...f, color: e.target.value }))}
-                />
-                <input
-                  className="input flex-1"
-                  value={formatting.color || '#000000'}
-                  onChange={e => setFormatting((f: any) => ({ ...f, color: e.target.value }))}
-                />
-              </div>
+              <input type="number" className="input" value={formatting.fontSize || 12} onChange={e => setFormatting((f: any) => ({ ...f, fontSize: Number(e.target.value) }))} min={9} max={16} />
             </div>
             <div>
               <label className="label">Line Height</label>
-              <select
-                className="select"
-                value={formatting.lineHeight || 1.5}
-                onChange={e => setFormatting((f: any) => ({ ...f, lineHeight: Number(e.target.value) }))}
-              >
+              <select className="select" value={formatting.lineHeight || 1.5} onChange={e => setFormatting((f: any) => ({ ...f, lineHeight: Number(e.target.value) }))}>
                 <option value={1.2}>Compact (1.2)</option>
                 <option value={1.5}>Normal (1.5)</option>
                 <option value={1.8}>Relaxed (1.8)</option>
@@ -400,81 +314,20 @@ export default function PaperDetailPage() {
               </select>
             </div>
           </div>
-
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="checkbox"
-                checked={formatting.showBorder || false}
-                onChange={e => setFormatting((f: any) => ({ ...f, showBorder: e.target.checked }))}
-              />
-              <span className="text-sm font-medium text-gray-700">Show border</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="checkbox"
-                checked={formatting.bold || false}
-                onChange={e => setFormatting((f: any) => ({ ...f, bold: e.target.checked }))}
-              />
-              <span className="text-sm font-medium text-gray-700">Bold text</span>
-            </label>
-          </div>
-
           <div>
-            <label className="label">Footer Note (optional)</label>
-            <input
-              className="input"
-              value={formatting.footerNote || ''}
-              onChange={e => setFormatting((f: any) => ({ ...f, footerNote: e.target.value }))}
-              placeholder="e.g. Best of luck to all students"
-            />
+            <label className="label">Footer Note</label>
+            <input className="input" value={formatting.footerNote || ''} onChange={e => setFormatting((f: any) => ({ ...f, footerNote: e.target.value }))} placeholder="e.g. Best of luck!" />
           </div>
-
           <div className="flex gap-3 pt-2">
             <button onClick={saveFormatting} disabled={saving} className="btn-primary">
-              {saving ? <span className="spinner" /> : <Check className="w-4 h-4" />}
-              Save Formatting
+              {saving ? <span className="spinner" /> : <Check className="w-4 h-4" />} Save
             </button>
-            <a
-              href={papersApi.getPreviewUrl(paperId)}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-secondary"
-            >
+            <a href={papersApi.getPreviewUrl(paperId)} target="_blank" rel="noreferrer" className="btn-secondary">
               <Eye className="w-4 h-4" /> Preview PDF
             </a>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: PaperStatus }) {
-  return (
-    <span className={clsx(
-      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-      status === 'final'    && 'bg-green-100 text-green-700',
-      status === 'draft'    && 'bg-gray-100 text-gray-600',
-      status === 'archived' && 'bg-amber-100 text-amber-700',
-    )}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-}
-
-function MiniStat({ icon: Icon, label, value, color, capitalize }: any) {
-  return (
-    <div className="card p-4 flex items-center gap-3">
-      <div className={clsx('w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0', color)}>
-        <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
-      </div>
-      <div>
-        <div className={clsx('text-sm font-bold text-gray-900', capitalize && 'capitalize')}>{value}</div>
-        <div className="text-xs text-gray-500">{label}</div>
-      </div>
     </div>
   );
 }
