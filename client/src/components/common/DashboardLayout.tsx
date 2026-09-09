@@ -10,7 +10,7 @@ import {
   LayoutDashboard, FilePlus, Files, FileStack, Sparkles, Database,
   Users, ClipboardList, User, LogOut, Menu, X,
   ChevronDown, Search, Bell,
-  BarChart3, School, Library, LayoutTemplate,
+  BarChart3, School, Library, LayoutTemplate, Landmark,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -35,6 +35,7 @@ const getNavItems = (user: { role?: string; permissions?: string[] }) => {
   const admin: NavItem[] = [
     { label: 'Manage Users',   href: '/app/admin/users',      icon: Users,            roles: ['super_admin','school_admin'], perm: 'users' },
     { label: 'Schools',        href: '/app/admin/schools',    icon: School,           roles: ['super_admin','school_admin'], perm: 'schools' },
+    { label: 'Courses',        href: '/app/admin/courses',    icon: Landmark,        roles: ['super_admin','school_admin'], perm: 'courses' },
     { label: 'Syllabus',       href: '/app/admin/syllabus',   icon: Library,          roles: ['super_admin','school_admin'], perm: 'syllabus' },
     { label: 'Templates',      href: '/app/admin/templates',  icon: LayoutTemplate,   roles: ['super_admin','school_admin'], perm: 'settings' },
     { label: 'Papers (All)',   href: '/app/admin/papers',     icon: FileStack,        roles: ['super_admin','school_admin'], perm: 'generatedPapers' },

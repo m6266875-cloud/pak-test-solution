@@ -21,7 +21,7 @@ import { v2 } from '../../api/v2';
 import { EmptyState, PageHeader, Skeleton } from '../../components/ui';
 import CourseLogo from '../../components/common/CourseLogo';
 import type { PaperSummaryV2 } from '../../types';
-import { fmtDate } from './generate/state';
+import { fmtDate } from './shared/paperUtils';
 
 const STATUSES = ['draft', 'final', 'archived'] as const;
 const LIMIT = 12;

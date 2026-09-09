@@ -50,6 +50,10 @@ async function main() {
     await client.query('COMMIT');
     console.log('✔ Catalogue seeded/refreshed in one committed transaction:');
     console.log(JSON.stringify(stats, null, 2));
+    if (stats.singleCopyWarnings.length) {
+      console.log(`── Single-copy guard (${stats.singleCopyWarnings.length} warnings, ${stats.singleCopyConflicts} same-title conflicts) ──`);
+      for (const w of stats.singleCopyWarnings) console.log(`  ⚠ ${w}`);
+    }
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch { /* ignore */ }
     console.error('✖ Seed failed — transaction rolled back. No partial catalogue was written.');

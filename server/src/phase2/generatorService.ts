@@ -18,6 +18,7 @@
  */
 import { q, q1, run, withTx, TxClient } from './db';
 import { hasPerm } from '../phase3/perms';
+import { record as recordAudit } from '../phase3/audit';
 import { ApiError } from '../utils/apiResponse';
 import { loadTeacherScope } from './scope';
 import { AuthUser, PaperType, QuestionType } from './types';
@@ -66,6 +67,21 @@ export interface GenerateInput {
   schoolName?: string;
 }
 
+export interface PreviewPoolInput {
+  chapterIds: number[];
+  topicIds?: number[];
+  exerciseIds?: number[];
+  language?: 'english' | 'urdu' | 'bilingual';
+  type?: string;
+  difficulty?: 'easy' | 'medium' | 'hard' | 'any';
+  search?: string;
+  paperType?: PaperType;
+  distribution?: DistributionRowInput[];
+  excludeIds?: number[];
+  page?: number;
+  limit?: number;
+}
+
 interface Resolved {
   subjectIds: number[];
   classId: number;
@@ -108,6 +124,20 @@ const normType = (t: string): QuestionType => {
   if (!TYPE_SET.has(v)) throw ApiError.badRequest(`Invalid question type '${t}'`);
   return v as QuestionType;
 };
+
+/**
+ * PHASE 4 — the 5-step wizard no longer asks for a session. Resolve the
+ * course's current session (fall back to the most recent linked session)
+ * so generated papers still snapshot one, exactly as Phase 3 stored it.
+ */
+async function currentSessionForCourse(courseId: number): Promise<number | null> {
+  const cur = await q1<{ sessionId: number }>(
+    `SELECT cs."sessionId" FROM "CourseSession" cs JOIN "AcademicSession" a ON a.id = cs."sessionId"
+      WHERE cs."courseId" = $1 ORDER BY (cs.status = 'current') DESC, a."startYear" DESC, cs."sortOrder" LIMIT 1`,
+    [courseId]
+  );
+  return cur?.sessionId ?? null;
+}
 
 export class PaperGeneratorV2 {
   /** Validate + fully resolve the request; throws before any write. */
@@ -242,6 +272,12 @@ export class PaperGeneratorV2 {
       }
     }
 
+    // Phase 4 — stamp the course's current session when the caller (5-step
+    // wizard) did not submit one explicitly.
+    if (sessionId == null && courseId != null) {
+      sessionId = await currentSessionForCourse(courseId);
+    }
+
     // manual question ids
     const autoSelect = input.autoSelect !== false;
     const manualIds = autoSelect ? [] : [...new Set((input.questionIds ?? []).map(Number))].filter((n) => Number.isInteger(n) && n > 0);
@@ -298,6 +334,159 @@ export class PaperGeneratorV2 {
     for (const t of TYPE_SET) map[t] = 0;
     for (const rw of rows) map[rw.type] = Number(rw.n);
     return map;
+  }
+
+  /**
+   * PHASE 4 — candidate pool for wizard Step 4 (preview, nothing persisted).
+   * Same scope + approval semantics as generate(): chapters must exist and be
+   * active, teachers are restricted to their assigned subjects, only
+   * approved/active questions are returned. Paginated — the client never
+   * receives the whole bank. When `distribution` is supplied, `suggestedIds`
+   * holds a chapter-even auto-pick produced by the same draw logic as
+   * generate(), so "shuffle" is simply another call.
+   */
+  async previewPool(user: AuthUser, input: PreviewPoolInput) {
+    const chapterIds = [...new Set((input.chapterIds ?? []).map(Number))].filter((n) => Number.isInteger(n) && n > 0);
+    if (!chapterIds.length) throw ApiError.badRequest('chapterIds are required');
+    const topicIds = [...new Set((input.topicIds ?? []).map(Number))].filter((n) => Number.isInteger(n) && n > 0);
+    const exerciseIds = [...new Set((input.exerciseIds ?? []).map(Number))].filter((n) => Number.isInteger(n) && n > 0);
+    const excludeIds = [...new Set((input.excludeIds ?? []).map(Number))].filter((n) => Number.isInteger(n) && n > 0);
+
+    const language = input.language ?? 'bilingual';
+    if (!LANG.has(language)) throw ApiError.badRequest(`Invalid language '${input.language}'`);
+    const type = input.type != null ? normType(input.type) : null;
+    const difficulty = input.difficulty ?? 'any';
+    if (!DIFFS.has(difficulty)) throw ApiError.badRequest(`Invalid difficulty '${input.difficulty}'`);
+
+    const chs = await q<{ id: number; subjectId: number; status: string }>(
+      `SELECT id, "subjectId", status FROM "Chapter" WHERE id = ANY($1::int[])`,
+      [chapterIds]
+    );
+    if (chs.length !== chapterIds.length) {
+      const found = new Set(chs.map((c) => c.id));
+      throw ApiError.badRequest('Some chapters do not exist', [{ missing: chapterIds.filter((x) => !found.has(x)) }]);
+    }
+    if (chs.some((c) => c.status !== 'active')) throw ApiError.badRequest('Some chapters are not active');
+    if (user.role === 'teacher') {
+      const scope = await loadTeacherScope(user.id);
+      const blocked = [...new Set(chs.map((c) => c.subjectId))].filter((sid) => !scope.subjectIds.includes(sid));
+      if (blocked.length) throw ApiError.forbidden('Some chapters are not assigned to you');
+    }
+
+    // shared scope predicate (chapters × topics × exercises × language × teacher)
+    const where = [`x."chapterId" = ANY($1::int[])`, `x.status = 'approved'`, `x."isActive" = true`];
+    const params: unknown[] = [chapterIds];
+    const push = (v: unknown) => { params.push(v); return params.length; };
+    if (topicIds.length) { const i = push(topicIds); where.push(`x."topicId" = ANY($${i}::int[])`); }
+    if (exerciseIds.length) { const i = push(exerciseIds); where.push(`x."exerciseId" = ANY($${i}::int[])`); }
+    if (language === 'english' || language === 'urdu') {
+      const i = push(language);
+      where.push(`x.language = $${i}`);
+    } else {
+      const i = push(['english', 'urdu', 'bilingual']);
+      where.push(`x.language = ANY($${i}::text[])`);
+    }
+    if (user.role === 'teacher') {
+      const scope = await loadTeacherScope(user.id);
+      if (!scope.subjectIds.length) {
+        return { rows: [], total: 0, page: 1, limit: 0, countsByType: {}, suggestedIds: input.distribution?.length ? [] : null };
+      }
+      const i = push(scope.subjectIds);
+      where.push(`x."subjectId" = ANY($${i}::int[])`);
+    }
+    const baseWhere = where.join(' AND ');
+    const baseParams = [...params];
+
+    // per-type counts inside the scope (ignores type/search/exclude filters)
+    const counts: Record<string, number> = {};
+    for (const t of TYPE_SET) counts[t] = 0;
+    const countRows = await q<{ type: string; n: string }>(
+      `SELECT x.type, count(*)::int AS n FROM "Question" x WHERE ${baseWhere} GROUP BY x.type`,
+      baseParams
+    );
+    for (const r of countRows) counts[r.type] = Number(r.n);
+
+    // paginated candidate rows
+    const page = Math.max(1, Number(input.page ?? 1) || 1);
+    const limit = Math.min(100, Math.max(1, Number(input.limit ?? 50) || 50));
+    const rowWhere = [baseWhere];
+    const rowParams: unknown[] = [...baseParams];
+    const rpush = (v: unknown) => { rowParams.push(v); return rowParams.length; };
+    if (type) { const i = rpush(type); rowWhere.push(`x.type = $${i}`); }
+    if (difficulty !== 'any') { const i = rpush(difficulty); rowWhere.push(`x.difficulty = $${i}`); }
+    if (excludeIds.length) { const i = rpush(excludeIds); rowWhere.push(`NOT (x.id = ANY($${i}::int[]))`); }
+    const term = (input.search ?? '').trim();
+    if (term) { const i = rpush(`%${term.replace(/[\\%_]/g, '\\$&')}%`); rowWhere.push(`x.text ILIKE $${i}`); }
+    const whereSql = rowWhere.join(' AND ');
+    const [rows, cnt] = await Promise.all([
+      q(
+        `SELECT x.id, x.type, x.text, x.marks, x.options, x.answer, x.difficulty, x.language,
+                x."chapterId", ch.number AS "chapterNumber", ch.name AS "chapterName",
+                x."exerciseId", e.number AS "exerciseNumber", e.name AS "exerciseName"
+           FROM "Question" x
+           JOIN "Chapter" ch ON ch.id = x."chapterId"
+           LEFT JOIN "Exercise" e ON e.id = x."exerciseId"
+          WHERE ${whereSql} ORDER BY x.id LIMIT $${rowParams.length + 1} OFFSET $${rowParams.length + 2}`,
+        [...rowParams, limit, (page - 1) * limit]
+      ),
+      q1<{ n: string }>(`SELECT count(*)::int AS n FROM "Question" x WHERE ${whereSql}`, rowParams),
+    ]);
+
+    // optional auto-pick suggestion (same draw logic as generate())
+    let suggestedIds: number[] | null = null;
+    if (input.distribution && input.distribution.length) {
+      if (input.paperType != null && !PAPER_TYPES.has(input.paperType)) {
+        throw ApiError.badRequest(`Invalid paperType '${input.paperType}'`);
+      }
+      const distRows: { type: QuestionType; count: number; marks: number; difficulty: string }[] = [];
+      for (const d of input.distribution) {
+        const dt = normType(d.type);
+        if (input.paperType && !TYPE_GROUPS[input.paperType].has(dt)) {
+          throw ApiError.badRequest(`Question type '${d.type}' is not allowed for a ${input.paperType} paper`);
+        }
+        const count = Number(d.count);
+        const marks = Number(d.marks);
+        if (!Number.isInteger(count) || count < 0 || count > 200 || !Number.isInteger(marks) || marks < 1 || marks > 100) {
+          throw ApiError.badRequest(`Invalid distribution row {type: ${d.type}, count: ${d.count}, marks: ${d.marks}}`);
+        }
+        const dd = d.difficulty ?? 'any';
+        if (!DIFFS.has(dd)) throw ApiError.badRequest(`Invalid difficulty '${d.difficulty}'`);
+        if (count > 0) distRows.push({ type: dt, count, marks, difficulty: dd });
+      }
+      const pool = await q<PoolRow>(
+        `SELECT x.id, x.type, x."chapterId", x.difficulty, x."topicId", x."exerciseId"
+           FROM "Question" x WHERE ${baseWhere} ORDER BY x.id`,
+        baseParams
+      );
+      const byType = new Map<string, PoolRow[]>();
+      for (const prow of pool) {
+        if (!byType.has(prow.type)) byType.set(prow.type, []);
+        byType.get(prow.type)!.push(prow);
+      }
+      const used = new Set<number>();
+      suggestedIds = [];
+      for (const row of distRows) {
+        const chosen = this.drawForRow(byType.get(row.type) ?? [], row, null, used);
+        for (const c of chosen) { used.add(c.id); suggestedIds!.push(c.id); }
+      }
+    }
+
+    // full rows for the suggestion so the client can render picks instantly
+    let suggestedRows: unknown[] = [];
+    if (suggestedIds && suggestedIds.length) {
+      suggestedRows = await q(
+        `SELECT x.id, x.type, x.text, x.marks, x.options, x.answer, x.difficulty, x.language,
+                x."chapterId", ch.number AS "chapterNumber", ch.name AS "chapterName",
+                x."exerciseId", e.number AS "exerciseNumber", e.name AS "exerciseName"
+           FROM "Question" x
+           JOIN "Chapter" ch ON ch.id = x."chapterId"
+           LEFT JOIN "Exercise" e ON e.id = x."exerciseId"
+          WHERE x.id = ANY($1::int[])`,
+        [suggestedIds]
+      );
+    }
+
+    return { rows, total: Number(cnt?.n ?? 0), page, limit, countsByType: counts, suggestedIds, suggestedRows };
   }
 
   /**
@@ -432,6 +621,16 @@ export class PaperGeneratorV2 {
         out.push(paper);
       }
       return out;
+    });
+
+    // Phase 4 — generation audit trail (record() never throws).
+    await recordAudit(user, {
+      action: 'paper.generate', entity: 'Paper', entityId: papers[0]?.id ?? null,
+      meta: {
+        paperIds: papers.map((p: any) => p.id), paperCount: r.paperCount,
+        courseId: r.courseId, classId: r.classId, subjectIds: r.subjectIds,
+        totalMarks: r.totalMarks, paperType: r.paperType, warnings,
+      },
     });
 
     return { papers, warnings, available: avail };
@@ -659,6 +858,7 @@ export class PaperGeneratorV2 {
 
   async updateMeta(user: AuthUser, paperId: number, body: { title?: string; status?: string; examTitle?: string; description?: string; totalMarks?: number }) {
     await this.assertCanManage(user, paperId);
+    const changedKeys = ['title', 'examTitle', 'description', 'totalMarks', 'status'].filter((k) => (body as any)[k] !== undefined);
     const sets: string[] = [];
     const params: unknown[] = [];
     let p = 1;
@@ -679,6 +879,8 @@ export class PaperGeneratorV2 {
     if (sets.length) {
       params.push(paperId);
       await run(`UPDATE "Paper" SET ${sets.join(', ')}, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $${params.length}`, params);
+      // Phase 4 — "paper saved" audit trail (status-only callers may add their own row).
+      await recordAudit(user, { action: 'paper.save', entity: 'Paper', entityId: paperId, meta: { fields: changedKeys, status: body.status ?? null } });
     }
     return this.getPaper(user, paperId);
   }
@@ -753,6 +955,8 @@ export class PaperGeneratorV2 {
         );
       }
     });
+    // Phase 4 — question selection audit trail.
+    await recordAudit(user, { action: 'paper.questions.select', entity: 'Paper', entityId: paperId, meta: { questionCount: ids.length } });
     return this.getPaper(user, paperId);
   }
 

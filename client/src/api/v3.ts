@@ -9,9 +9,11 @@
 import api from './client';
 import { store } from '../store';
 import type {
+  AcademicSessionV3,
   AuditListResultV3, BrandingConfigV3, CatalogOptionsV3, PaperRowV3,
   SchoolDashboardV3, SchoolListResultV3, SchoolV3, TemplateV3, UserListResultV3,
   UserRowV3, AnalyticsOverviewV3, PaperActivityV3, TopListsV3,
+  CourseAdminV3, CourseDetailV3, ChapterImportResultV3,
 } from '../types';
 
 export interface PaperFiltersV3 {
@@ -125,5 +127,20 @@ export const v3 = {
       const qs = q.toString();
       return downloadWithToken(`/api/v3/papers/${id}/pdf${qs ? `?${qs}` : ''}`);
     },
+  },
+  syllabus: {
+    importChapters: (data: { bookId: number; subjectId?: number; chapters: Array<{ number?: number; name: string; description?: string; sourceRef?: string; exercises?: Array<{ number?: number; name: string; sourceRef?: string }> }> }) =>
+      api.post<{ data: ChapterImportResultV3 }>('/v3/syllabus/chapters/import', data),
+  },
+  courses: {
+    list: () => api.get<{ data: CourseAdminV3[] }>('/v3/courses'),
+    get: (id: number) => api.get<{ data: CourseDetailV3 }>(`/v3/courses/${id}`),
+    create: (data: Record<string, unknown>) => api.post<{ data: CourseDetailV3 }>('/v3/courses', data),
+    update: (id: number, data: Record<string, unknown>) => api.put<{ data: CourseDetailV3 }>(`/v3/courses/${id}`, data),
+    setSession: (id: number, data: { sessionId: number; status: string; notes?: string }) =>
+      api.put<{ data: CourseDetailV3 }>(`/v3/courses/${id}/sessions`, data),
+    linkClass: (id: number, classId: number) => api.post<{ data: CourseDetailV3 }>(`/v3/courses/${id}/classes`, { classId }),
+    sessions: () => api.get<{ data: AcademicSessionV3[] }>('/v3/sessions'),
+    unlinkClass: (id: number, classId: number) => api.delete(`/v3/courses/${id}/classes/${classId}`),
   },
 };

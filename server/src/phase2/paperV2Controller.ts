@@ -20,6 +20,12 @@ export const generatePapers = async (req: Phase2AuthRequest, res: Response, next
   } catch (err) { next(err); }
 };
 
+export const previewPool = async (req: Phase2AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    successResponse(res, await paperGeneratorV2.previewPool(req.user!, req.body ?? {}), 'Candidate pool fetched');
+  } catch (err) { next(err); }
+};
+
 export const listPapers = async (req: Phase2AuthRequest, res: Response, next: NextFunction) => {
   try {
     const result = await paperGeneratorV2.list(req.user!, {
