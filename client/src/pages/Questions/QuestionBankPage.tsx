@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { v2 } from '../../api/v2';
 import { PageHeader, Skeleton, EmptyState } from '../../components/ui';
+import CourseLogo from '../../components/common/CourseLogo';
 import type {
   BookV2, ChapterV2, ClassV2, CourseV2, Difficulty, ExerciseV2, Medium,
   QuestionCategory, QuestionRowV2, QuestionStatus, QuestionType, SubjectV2, TopicV2,
@@ -373,8 +374,9 @@ function QuestionRowView(props: {
         <td className="px-4 py-3"><span className="badge-gray whitespace-nowrap">{props.typeLabel(q.type)}</span></td>
         <td className="px-4 py-3 max-w-[220px]">
           <div className="text-surface-600 truncate">{q.subjectName || '—'}</div>
-          <div className="text-xs text-surface-400 truncate">
-            {[q.courseCode, q.className, q.chapterNumber ? `Ch ${q.chapterNumber}` : '', q.topicName ?? q.exerciseName ?? ''].filter(Boolean).join(' · ')}
+          <div className="text-xs text-surface-400 truncate flex items-center gap-1">
+            {q.courseCode && <CourseLogo code={q.courseCode} size="xs" className="flex-shrink-0" />}
+            <span className="truncate">{[q.courseCode, q.className, q.chapterNumber ? `Ch ${q.chapterNumber}` : '', q.topicName ?? q.exerciseName ?? ''].filter(Boolean).join(' · ')}</span>
           </div>
         </td>
         <td className="px-4 py-3 text-center font-semibold">{q.marks}</td>

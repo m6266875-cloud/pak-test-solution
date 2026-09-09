@@ -24,6 +24,7 @@ import PaperBrandingModal from '../../components/papers/PaperBrandingModal';
 import type { PaperV2, QuestionRowV2 } from '../../types';
 import { TYPE_LABELS, TYPE_SHORT, fmtDate, optionEntries } from './generate/state';
 import { PaperDoc } from './generate/PaperDoc';
+import CourseLogo from '../../components/common/CourseLogo';
 import { PrintSheet } from './PrintSheet';
 
 export default function PaperDetailPage() {
@@ -221,7 +222,7 @@ export default function PaperDetailPage() {
         </div>
         <div className="md:col-span-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-surface-400">
-            {(paper.subjects ?? []).map((s) => s.name).join(', ') || '—'} · {paper.courseName ?? ''} · {paper.timeLimit ?? 90} min · {paper.totalMarks} marks · Σ {qs.reduce((a, q) => a + (q.marks ?? 1), 0)}
+            {(paper.subjects ?? []).map((s) => s.name).join(', ') || '—'} · {paper.courseCode && <CourseLogo code={paper.courseCode} size="xs" style={{ verticalAlign: '-0.22em' }} />} {paper.courseName ?? ''} · {paper.timeLimit ?? 90} min · {paper.totalMarks} marks · Σ {qs.reduce((a, q) => a + (q.marks ?? 1), 0)}
             {paper.settings && <> · config snapshot: {paper.settings.questionCount} Qs</>}
           </p>
           <div className="flex items-center gap-2">

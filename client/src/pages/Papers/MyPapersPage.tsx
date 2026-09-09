@@ -19,6 +19,7 @@ import {
 import { useAppSelector } from '../../store/hooks';
 import { v2 } from '../../api/v2';
 import { EmptyState, PageHeader, Skeleton } from '../../components/ui';
+import CourseLogo from '../../components/common/CourseLogo';
 import type { PaperSummaryV2 } from '../../types';
 import { fmtDate } from './generate/state';
 
@@ -38,7 +39,7 @@ export default function MyPapersPage() {
   const [status, setStatus] = useState<string>('');
   const [courseId, setCourseId] = useState<number | undefined>();
   const [classId, setClassId] = useState<number | undefined>();
-  const [courses, setCourses] = useState<Array<{ id: number; name: string }>>([]);
+  const [courses, setCourses] = useState<Array<{ id: number; code: string; name: string }>>([]);
   const [classes, setClasses] = useState<Array<{ id: number; name: string }>>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -64,7 +65,7 @@ export default function MyPapersPage() {
 
   // catalog filters for admin scope browsers
   useEffect(() => {
-    v2.catalog.courses().then((r) => setCourses(r.data.data.map((c) => ({ id: c.id, name: `${c.code} — ${c.name}` })))).catch(() => undefined);
+    v2.catalog.courses().then((r) => setCourses(r.data.data.map((c) => ({ id: c.id, code: c.code, name: `${c.code} — ${c.name}` })))).catch(() => undefined);
   }, []);
   useEffect(() => {
     if (!courseId) { setClasses([]); setClassId(undefined); return; }
@@ -115,6 +116,7 @@ export default function MyPapersPage() {
           <option value="">All courses</option>
           {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        {(() => { const sel = courses.find((c) => c.id === courseId); return sel ? <CourseLogo code={sel.code} size="sm" /> : null; })()}
         <select className="select w-44" value={classId ?? ''} disabled={!courseId}
           onChange={(e) => { setClassId(e.target.value ? Number(e.target.value) : undefined); setPage(1); }}>
           <option value="">All classes</option>
@@ -145,7 +147,8 @@ export default function MyPapersPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block font-bold text-surface-900 truncate">{p.title}</span>
                   <span className="block text-xs text-surface-500">
-                    {p.examTitle ? `${p.examTitle} · ` : ''}{p.className}{p.courseCode ? ` · ${p.courseCode}` : ''} · {(p.subjects ?? []).map((s) => s.name).join(', ') || '—'}
+                    {p.examTitle ? `${p.examTitle} · ` : ''}{p.className}
+                    {p.courseCode ? (<> · <CourseLogo code={p.courseCode} size="xs" style={{ verticalAlign: '-0.22em' }} /> {p.courseCode}</>) : ''} · {(p.subjects ?? []).map((s) => s.name).join(', ') || '—'}
                   </span>
                   <span className="block text-[11px] text-surface-400 mt-0.5">
                     {p.questionCount} questions · {p.totalMarks} marks · {p.medium} · {fmtDate(p.createdAt)}

@@ -7,6 +7,7 @@ import { DashboardStats, PaperSummaryV2 } from '../../types';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
+import CourseLogo from '../../components/common/CourseLogo';
 import {
   FilePlus, Files, Database, TrendingUp,
   BookOpen, Clock, Award, Users, ArrowRight,
@@ -183,7 +184,7 @@ function TeacherHome() {
                         </p>
                       </div>
                     </div>
-                    <span className="badge-brand shrink-0">{c.course.code}</span>
+                    <span className="badge-brand shrink-0"><CourseLogo code={c.course.code} size="2xs" />{c.course.code}</span>
                   </div>
 
                   {c.loading ? (
