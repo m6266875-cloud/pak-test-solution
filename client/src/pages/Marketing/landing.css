@@ -257,18 +257,8 @@
   overflow: hidden;
   border: 1px solid var(--lp-line);
   box-shadow: 0 34px 70px -34px rgba(26, 36, 30, 0.5);
-  transform: rotate(1.4deg);
 }
 .lp-hero-photo img { display: block; width: 100%; height: auto; }
-.lp-hero-photo::after {
-  /* zinc-green grade so any warm photo sits in-palette */
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(160deg, rgba(47, 62, 54, 0.34) 0%, rgba(47, 62, 54, 0.08) 42%, rgba(26, 36, 30, 0.42) 100%),
-    radial-gradient(120% 90% at 85% 8%, rgba(245, 240, 232, 0.22) 0%, transparent 42%);
-  mix-blend-mode: multiply;
-}
 .lp-hero-photo-note {
   position: absolute; left: 14px; bottom: 14px; z-index: 2;
   font-family: var(--lp-mono); font-size: 10.5px; letter-spacing: 0.14em;
