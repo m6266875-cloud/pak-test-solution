@@ -121,7 +121,7 @@ export default function AdminUsersPage() {
             {rows.map((u) => (
               <div key={u.id} className="px-4 py-3 flex flex-wrap items-center gap-3">
                 <div className={clsx('w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0',
-                  u.role === 'school_admin' ? 'bg-purple-500' : 'bg-brand-600')}>
+                  u.role === 'school_admin' ? 'bg-brand-600' : 'bg-brand-600')}>
                   {u.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-40">
@@ -228,7 +228,7 @@ function UserEditor({ tab, isSuper, schools, onClose, onSaved }: {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col animate-slide-down">
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100">
           <div className="flex items-center gap-2.5">
-            {tab === 'teacher' ? <UserPlus className="w-5 h-5 text-brand-600" /> : <ShieldCheck className="w-5 h-5 text-purple-600" />}
+            {tab === 'teacher' ? <UserPlus className="w-5 h-5 text-brand-600" /> : <ShieldCheck className="w-5 h-5 text-brass-600" />}
             <div>
               <h3 className="font-bold">{tab === 'teacher' ? 'Create teacher' : 'Create school admin'}</h3>
               <p className="text-xs text-surface-500">
