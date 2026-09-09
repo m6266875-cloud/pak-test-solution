@@ -138,13 +138,13 @@ function TeacherHome() {
             { icon: Files, label: 'My Papers', value: totals.papers, sub: 'All time', color: 'from-brand-500 to-brand-600' },
             { icon: Award, label: 'Final', value: totals.final, sub: 'Ready to print', color: 'from-emerald-500 to-emerald-600' },
             { icon: Clock, label: 'Drafts', value: totals.drafts, sub: 'In progress', color: 'from-amber-500 to-amber-600' },
-            { icon: Database, label: 'Approved Questions', value: totals.approved, sub: 'In your scope', color: 'from-purple-500 to-purple-600' },
+            { icon: Database, label: 'Approved Questions', value: totals.approved, sub: 'In your scope', color: 'from-brand-500 to-brand-600' },
           ].map((stat, i) => (
             <motion.div key={stat.label} custom={i} variants={fadeUp} initial="hidden" animate="show" className="card p-5">
               <div className={clsx('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 text-white shadow-sm', stat.color)}>
                 <stat.icon className="w-5 h-5" />
               </div>
-              <div className="text-2xl font-bold text-surface-900 font-display">{stat.value}</div>
+              <div className="text-2xl font-medium text-surface-900 font-mono">{stat.value}</div>
               <div className="text-sm font-medium text-surface-700">{stat.label}</div>
               <div className="text-xs text-surface-400 mt-0.5">{stat.sub}</div>
             </motion.div>
@@ -170,7 +170,7 @@ function TeacherHome() {
             {cards.map((c, i) => (
               <motion.div key={c.key} custom={i} variants={fadeUp} initial="hidden" animate="show"
                 className="card overflow-hidden flex flex-col hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                <div className="h-1.5 bg-gradient-to-r from-brand-500 via-purple-500 to-brand-600" />
+                <div className="h-1.5 bg-gradient-to-r from-brand-500 via-brass-400 to-brand-600" />
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
@@ -197,7 +197,7 @@ function TeacherHome() {
                         { v: c.papersTotal, l: 'Papers' },
                       ].map((s) => (
                         <div key={s.l} className="rounded-xl bg-surface-50 py-2.5">
-                          <div className="text-lg font-bold text-surface-900 font-display">{s.v}</div>
+                          <div className="text-lg font-medium text-surface-900 font-mono">{s.v}</div>
                           <div className="text-[10px] font-semibold text-surface-400 uppercase tracking-wide">{s.l}</div>
                         </div>
                       ))}
@@ -293,7 +293,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: Files, label: 'Total Papers', value: stats.totalPapers, sub: 'All time', color: 'from-blue-500 to-blue-600' },
-            { icon: Database, label: 'Questions', value: stats.totalQuestions.toLocaleString(), sub: 'In bank', color: 'from-purple-500 to-purple-600' },
+            { icon: Database, label: 'Questions', value: stats.totalQuestions.toLocaleString(), sub: 'In bank', color: 'from-brand-500 to-brand-600' },
             { icon: Users, label: 'Active Users', value: stats.totalUsers, sub: 'Teachers & admins', color: 'from-emerald-500 to-emerald-600' },
             { icon: TrendingUp, label: 'This Month', value: myPapers.length, sub: 'Papers generated', color: 'from-amber-500 to-amber-600' },
           ].map((stat, i) => (
@@ -301,7 +301,7 @@ export default function DashboardPage() {
               <div className={clsx('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 text-white shadow-sm', stat.color)}>
                 <stat.icon className="w-5 h-5" />
               </div>
-              <div className="text-2xl font-bold text-surface-900 font-display">{stat.value}</div>
+              <div className="text-2xl font-medium text-surface-900 font-mono">{stat.value}</div>
               <div className="text-sm font-medium text-surface-700">{stat.label}</div>
               <div className="text-xs text-surface-400 mt-0.5">{stat.sub}</div>
             </motion.div>
@@ -322,11 +322,11 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {[
-              { icon: School,         label: 'Schools',   value: stats.syllabus.schools,   to: '/app/admin/schools',  tint: 'bg-rose-50 text-rose-600' },
-              { icon: Landmark,       label: 'Boards',    value: stats.syllabus.boards,    to: '/app/admin/syllabus', tint: 'bg-indigo-50 text-indigo-600' },
+              { icon: School,         label: 'Schools',   value: stats.syllabus.schools,   to: '/app/admin/schools',  tint: 'bg-brass-50 text-brass-700' },
+              { icon: Landmark,       label: 'Boards',    value: stats.syllabus.boards,    to: '/app/admin/syllabus', tint: 'bg-brand-50 text-brand-700' },
               { icon: BookMarked,     label: 'Books',     value: stats.syllabus.books,     to: '/app/admin/syllabus', tint: 'bg-emerald-50 text-emerald-600' },
-              { icon: GraduationCap,  label: 'Classes',   value: stats.syllabus.classes,   to: '',                   tint: 'bg-sky-50 text-sky-600' },
-              { icon: Layers,         label: 'Chapters',  value: stats.syllabus.chapters,  to: '/app/admin/syllabus', tint: 'bg-purple-50 text-purple-600' },
+              { icon: GraduationCap,  label: 'Classes',   value: stats.syllabus.classes,   to: '',                   tint: 'bg-emerald-50 text-emerald-700' },
+              { icon: Layers,         label: 'Chapters',  value: stats.syllabus.chapters,  to: '/app/admin/syllabus', tint: 'bg-brass-50 text-brass-700' },
               { icon: FilePlus,       label: 'Exercises', value: stats.syllabus.exercises, to: '/app/admin/syllabus', tint: 'bg-amber-50 text-amber-600' },
             ].map((item) => {
               const inner = (
@@ -334,7 +334,7 @@ export default function DashboardPage() {
                   <div className={clsx('w-9 h-9 rounded-xl mx-auto flex items-center justify-center mb-2', item.tint)}>
                     <item.icon className="w-5 h-5" />
                   </div>
-                  <div className="text-xl font-bold text-surface-900 font-display">{item.value}</div>
+                  <div className="text-xl font-medium text-surface-900 font-mono">{item.value}</div>
                   <div className="text-xs text-surface-500 font-medium">{item.label}</div>
                 </div>
               );
@@ -449,7 +449,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Pro tip */}
-          <div className="card p-5 bg-gradient-to-br from-brand-50 to-purple-50 border-brand-100">
+          <div className="card p-5 bg-gradient-to-br from-brand-50 to-beige-100 border-brand-200">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-5 h-5 text-white" />

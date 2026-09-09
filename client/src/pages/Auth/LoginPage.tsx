@@ -8,8 +8,9 @@ import { setCredentials } from '../../store/slices/authSlice';
 import { authApi } from '../../api/auth';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { BookOpen, Mail, Lock, Eye, EyeOff, ArrowRight, Shield, GraduationCap } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Shield, GraduationCap, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
+import Logo from '../../components/common/Logo';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -56,12 +57,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-white" />
-            </div>
-            <span className="font-display font-bold text-xl text-white">Pak Test Software</span>
-          </div>
+          <Logo variant="light" />
 
           {/* Center content */}
           <motion.div
@@ -123,11 +119,8 @@ export default function LoginPage() {
           className="w-full max-w-md"
         >
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-10">
-            <div className="w-10 h-10 gradient-brand rounded-xl flex items-center justify-center shadow-brand">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-display font-bold text-lg text-surface-900">Pak Test Software</span>
+          <div className="lg:hidden mb-10">
+            <Logo />
           </div>
 
           <div className="mb-8">
@@ -200,12 +193,12 @@ export default function LoginPage() {
             <p className="text-xs text-surface-400 mb-3">Each teacher can only see and generate papers for their own subject. Click a card to fill the form.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[
-                { role: 'Admin', tint: 'bg-rose-50 text-rose-600', email: 'admin@paktestsolution.com', pw: 'Admin@123456', subject: 'All subjects' },
+                { role: 'Admin', tint: 'bg-brass-50 text-brass-700', email: 'admin@paktestsolution.com', pw: 'Admin@123456', subject: 'All subjects' },
                 { role: 'Maths Teacher', tint: 'bg-brand-50 text-brand-600', email: 'math.teacher@demo.test', pw: 'Teacher@123456', subject: 'Mathematics' },
-                { role: 'English Teacher', tint: 'bg-indigo-50 text-indigo-600', email: 'eng.teacher@demo.test', pw: 'Teacher@123456', subject: 'English' },
-                { role: 'Physics Teacher', tint: 'bg-sky-50 text-sky-600', email: 'physics.teacher@demo.test', pw: 'Teacher@123456', subject: 'Physics' },
+                { role: 'English Teacher', tint: 'bg-emerald-50 text-emerald-700', email: 'eng.teacher@demo.test', pw: 'Teacher@123456', subject: 'English' },
+                { role: 'Physics Teacher', tint: 'bg-brass-50 text-brass-700', email: 'physics.teacher@demo.test', pw: 'Teacher@123456', subject: 'Physics' },
                 { role: 'Chemistry Teacher', tint: 'bg-emerald-50 text-emerald-600', email: 'chemistry.teacher@demo.test', pw: 'Teacher@123456', subject: 'Chemistry' },
-                { role: 'Biology Teacher', tint: 'bg-purple-50 text-purple-600', email: 'biology.teacher@demo.test', pw: 'Teacher@123456', subject: 'Biology' },
+                { role: 'Biology Teacher', tint: 'bg-brand-50 text-brand-700', email: 'biology.teacher@demo.test', pw: 'Teacher@123456', subject: 'Biology' },
               ].map((acc) => (
                 <button
                   key={acc.email}

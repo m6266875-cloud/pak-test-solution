@@ -14,12 +14,12 @@ import type { AuditRowV3 } from '../../types';
 const ACTION_COLOR: Record<string, string> = {
   'school.create': 'bg-emerald-100 text-emerald-700',
   'user.teacher.create': 'bg-blue-100 text-blue-700',
-  'user.admin.create': 'bg-purple-100 text-purple-700',
+  'user.admin.create': 'bg-brass-100 text-brass-800',
   'user.password-reset': 'bg-amber-100 text-amber-700',
-  'paper.generate': 'bg-indigo-100 text-indigo-700',
+  'paper.generate': 'bg-brand-100 text-brand-800',
   'paper.finalize': 'bg-emerald-100 text-emerald-700',
   'paper.archive': 'bg-surface-200 text-surface-600',
-  'paper.download': 'bg-teal-100 text-teal-700',
+  'paper.download': 'bg-emerald-100 text-emerald-800',
   'paper.duplicate': 'bg-cyan-100 text-cyan-700',
   'paper.branding': 'bg-pink-100 text-pink-700',
 };

@@ -43,14 +43,14 @@ export default function AnalyticsPage() {
 
   const isSchoolScope = user?.role === 'school_admin';
   const totals = [
-    { label: 'Teachers', value: overview.totals.teachers, icon: Users, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Teachers', value: overview.totals.teachers, icon: Users, color: 'bg-brand-50 text-brand-700' },
     { label: 'Papers', value: overview.totals.papers, icon: FileStack, color: 'bg-emerald-50 text-emerald-600' },
-    { label: 'Courses', value: overview.totals.courses, icon: BookOpen, color: 'bg-purple-50 text-purple-600' },
+    { label: 'Courses', value: overview.totals.courses, icon: BookOpen, color: 'bg-brass-50 text-brass-700' },
     { label: 'Classes', value: overview.totals.classes, icon: GraduationCap, color: 'bg-amber-50 text-amber-600' },
     ...(isSchoolScope ? [] : [
-      { label: 'Schools', value: overview.totals.schools, icon: SchoolIcon, color: 'bg-indigo-50 text-indigo-600' },
-      { label: 'Books', value: overview.totals.books, icon: Layers, color: 'bg-rose-50 text-rose-600' },
-      { label: 'Questions', value: overview.totals.questions, icon: BarChart3, color: 'bg-teal-50 text-teal-600' },
+      { label: 'Schools', value: overview.totals.schools, icon: SchoolIcon, color: 'bg-brand-50 text-brand-700' },
+      { label: 'Books', value: overview.totals.books, icon: Layers, color: 'bg-brass-50 text-brass-700' },
+      { label: 'Questions', value: overview.totals.questions, icon: BarChart3, color: 'bg-emerald-50 text-emerald-700' },
     ]),
   ];
   const maxDaily = Math.max(1, ...(activity?.daily ?? []).map((d) => d.n));
@@ -160,7 +160,7 @@ function MiniBar({ label, n, total }: { label: string; n: number; total: number 
         <span className="font-bold text-surface-700">{n}</span>
       </div>
       <div className="h-1.5 rounded-full bg-surface-100 overflow-hidden">
-        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${(n / total) * 100}%` }} />
+        <div className="h-full rounded-full bg-brand-600" style={{ width: `${(n / total) * 100}%` }} />
       </div>
     </div>
   );
