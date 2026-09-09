@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validation';
-import { authenticate, requireSchoolAdmin } from '../middleware/auth';
+import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   listBoards, createBoard, updateBoard, deleteBoard,
   listBooks, getBook, createBook, updateBook, deleteBook,
@@ -37,31 +37,31 @@ const topicValidation = [
 
 // Boards
 router.get('/boards',          listBoards);
-router.post('/boards',         requireSchoolAdmin, validate(boardValidation), createBoard);
-router.put('/boards/:id',      requireSchoolAdmin, updateBoard);
-router.delete('/boards/:id',   requireSchoolAdmin, deleteBoard);
+router.post('/boards',         requireAdmin, validate(boardValidation), createBoard);
+router.put('/boards/:id',      requireAdmin, updateBoard);
+router.delete('/boards/:id',   requireAdmin, deleteBoard);
 
 // Books
 router.get('/books',           listBooks);
 router.get('/books/:id',       getBook);
-router.post('/books',          requireSchoolAdmin, validate(bookValidation), createBook);
-router.put('/books/:id',       requireSchoolAdmin, updateBook);
-router.delete('/books/:id',    requireSchoolAdmin, deleteBook);
+router.post('/books',          requireAdmin, validate(bookValidation), createBook);
+router.put('/books/:id',       requireAdmin, updateBook);
+router.delete('/books/:id',    requireAdmin, deleteBook);
 
 // Chapters (book hierarchy drill-down)
 router.get('/chapters',        listChapterTree);
-router.put('/chapters/:id/book', requireSchoolAdmin, attachChapterToBook);
+router.put('/chapters/:id/book', requireAdmin, attachChapterToBook);
 
 // Exercises
 router.get('/exercises',       listExercises);
-router.post('/exercises',      requireSchoolAdmin, validate(exerciseValidation), createExercise);
-router.put('/exercises/:id',   requireSchoolAdmin, updateExercise);
-router.delete('/exercises/:id', requireSchoolAdmin, deleteExercise);
+router.post('/exercises',      requireAdmin, validate(exerciseValidation), createExercise);
+router.put('/exercises/:id',   requireAdmin, updateExercise);
+router.delete('/exercises/:id', requireAdmin, deleteExercise);
 
 // Topics
 router.get('/topics',          listTopics);
-router.post('/topics',         requireSchoolAdmin, validate(topicValidation), createTopic);
-router.put('/topics/:id',      requireSchoolAdmin, updateTopic);
-router.delete('/topics/:id',   requireSchoolAdmin, deleteTopic);
+router.post('/topics',         requireAdmin, validate(topicValidation), createTopic);
+router.put('/topics/:id',      requireAdmin, updateTopic);
+router.delete('/topics/:id',   requireAdmin, deleteTopic);
 
 export default router;

@@ -22,7 +22,7 @@ import { v3 } from '../../api/v3';
 import { EmptyState, PageHeader, Skeleton } from '../../components/ui';
 import PaperBrandingModal from '../../components/papers/PaperBrandingModal';
 import type { PaperV2, QuestionRowV2 } from '../../types';
-import { TYPE_LABELS, TYPE_SHORT, fmtDate, optionEntries } from './generate/state';
+import { TYPE_LABELS, TYPE_SHORT, fmtDate, optionEntries } from './paperUtils';
 import { PaperDoc } from './generate/PaperDoc';
 import CourseLogo from '../../components/common/CourseLogo';
 import { PrintSheet } from './PrintSheet';

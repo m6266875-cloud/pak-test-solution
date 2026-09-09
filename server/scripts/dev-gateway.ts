@@ -31,6 +31,7 @@ import jwt from 'jsonwebtoken';
 import { pool, q, q1, run } from '../src/phase2/db';
 import phase2Api from '../src/phase2/mount';
 import phase3Api from '../src/phase3/mount';
+import phase4Api from '../src/phase4/mount';
 import { createV2Governance } from '../src/phase3/v2Governance';
 import { PERMISSIONS } from '../src/phase3/perms';
 import { successResponse, ApiError } from '../src/utils/apiResponse';
@@ -421,6 +422,8 @@ async function main() {
   app.use('/api/v2', createV2Governance(), phase2Api);
   // ── Phase-3 API (schools/users/templates/analytics/audit/papers/PDF) ─────
   app.use('/api/v3', phase3Api);
+  // ── Phase-4 API (5-step wizard backend, dashboards, catalog cleanup) ─────
+  app.use('/api/v4', phase4Api);
 
   app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

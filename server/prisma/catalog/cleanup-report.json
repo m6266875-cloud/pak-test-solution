@@ -1,0 +1,48 @@
+{
+  "generatedAt": "2026-09-09T16:36:00.139Z",
+  "mode": "offline",
+  "jsonLevel": {
+    "singleCopy": true,
+    "decisions": [
+      {
+        "course": "OUP",
+        "grade": 6,
+        "subject": "Social Studies",
+        "medium": "em",
+        "action": "keep-components",
+        "kept": [
+          "World Watch History Book {gMinus5}",
+          "World Watch Geography Book {gMinus5}"
+        ],
+        "removed": []
+      },
+      {
+        "course": "OUP",
+        "grade": 7,
+        "subject": "Social Studies",
+        "medium": "em",
+        "action": "keep-components",
+        "kept": [
+          "World Watch History Book {gMinus5}",
+          "World Watch Geography Book {gMinus5}"
+        ],
+        "removed": []
+      },
+      {
+        "course": "OUP",
+        "grade": 8,
+        "subject": "Social Studies",
+        "medium": "em",
+        "action": "keep-components",
+        "kept": [
+          "World Watch History Book {gMinus5}",
+          "World Watch Geography Book {gMinus5}"
+        ],
+        "removed": []
+      }
+    ],
+    "subjectsScanned": 308
+  },
+  "db": null,
+  "archivedCount": null
+}

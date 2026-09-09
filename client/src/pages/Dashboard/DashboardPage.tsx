@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
-import { adminApi } from '../../api/admin';
 import { v2 } from '../../api/v2';
-import { DashboardStats, PaperSummaryV2 } from '../../types';
+import { v4 } from '../../api/v4';
+import { PaperSummaryV2 } from '../../types';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
@@ -244,20 +244,20 @@ export default function DashboardPage() {
   const isTeacher = user?.role === 'teacher';
   const isAdmin = user && ['super_admin', 'school_admin'].includes(user.role);
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  // Phase-4 role-aware dashboard (node-pg /api/v4/dashboard): super_admin gets
+  // global numbers + activity feed; school_admin gets school-scoped stats,
+  // the teacher list and school activity; teacher gets school + assignments.
+  const [dash, setDash] = useState<any>(null);
   const [myPapers, setMyPapers] = useState<PaperSummaryV2[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        // v2 recent papers — teacher: own; admin: across all teachers
-        const papersRes = await v2.papers.list({ limit: 8 });
-        setMyPapers(papersRes.data.data as PaperSummaryV2[]);
-        if (isAdmin) {
-          const statsRes = await adminApi.getDashboard();
-          setStats(statsRes.data.data);
-        }
+        const dashRes = await v4.dashboard();
+        const d = dashRes.data.data;
+        setDash(d);
+        setMyPapers((d?.recentPapers ?? []) as PaperSummaryV2[]);
       } catch (e) {
         console.error(e);
       } finally {
@@ -285,17 +285,44 @@ export default function DashboardPage() {
         />
       </motion.div>
 
-      {/* ═══ TEACHER: per-subject dashboard ═══ */}
-      {isTeacher && <TeacherHome />}
+      {/* ═══ TEACHER: school branding + per-subject dashboard ═══ */}
+      {isTeacher && (
+        <>
+          {dash?.school && (
+            <div className="card p-5 flex items-center gap-4">
+              {dash.school.logoUrl ? (
+                <img src={dash.school.logoUrl} alt={`${dash.school.name} logo`}
+                  className="w-12 h-12 rounded-xl object-contain bg-white border border-surface-100" />
+              ) : (
+                <span className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><School className="w-6 h-6" /></span>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-surface-900 truncate">{dash.school.name}</p>
+                <p className="text-xs text-surface-500">
+                  Your school — its logo, name and {dash.school.branding?.watermark?.enabled ? 'watermark' : 'header'} are applied automatically to every paper you generate.
+                </p>
+              </div>
+              <span className="text-[11px] font-bold text-brand-700 bg-brand-50 border border-brand-200 rounded-full px-3 py-1">Branding preview</span>
+            </div>
+          )}
+          {Array.isArray(dash?.assignments) && dash.assignments.length > 0 && (
+            <p className="text-xs text-surface-500 -mt-2">
+              Assigned scope:{' '}
+              {dash.assignments.map((a: any) => `${a.courseCode ?? '—'} · ${a.className} · ${a.subjectName}`).join('  |  ')}
+            </p>
+          )}
+          <TeacherHome />
+        </>
+      )}
 
-      {/* ═══ ADMIN STATS (Phase-1 endpoint; hidden when unavailable) ═══ */}
-      {isAdmin && stats && (
+      {/* ═══ ADMIN STATS (Phase-4 /v4/dashboard — school-scoped or global) ═══ */}
+      {isAdmin && dash?.stats?.totals && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: Files, label: 'Total Papers', value: stats.totalPapers, sub: 'All time', color: 'from-blue-500 to-blue-600' },
-            { icon: Database, label: 'Questions', value: stats.totalQuestions.toLocaleString(), sub: 'In bank', color: 'from-brand-500 to-brand-600' },
-            { icon: Users, label: 'Active Users', value: stats.totalUsers, sub: 'Teachers & admins', color: 'from-emerald-500 to-emerald-600' },
-            { icon: TrendingUp, label: 'This Month', value: myPapers.length, sub: 'Papers generated', color: 'from-amber-500 to-amber-600' },
+            { icon: Files, label: 'Total Papers', value: dash.stats.totals.papers, sub: user?.role === 'super_admin' ? 'System-wide' : 'Your school', color: 'from-blue-500 to-blue-600' },
+            { icon: Database, label: 'Questions', value: dash.stats.totals.questions.toLocaleString(), sub: user?.role === 'super_admin' ? 'In bank' : 'Used in papers', color: 'from-brand-500 to-brand-600' },
+            { icon: Users, label: 'Teachers', value: dash.stats.totals.teachers, sub: user?.role === 'super_admin' ? 'All schools' : 'Your school', color: 'from-emerald-500 to-emerald-600' },
+            { icon: School, label: 'Schools', value: dash.stats.totals.schools, sub: user?.role === 'super_admin' ? 'Active' : 'Assigned', color: 'from-amber-500 to-amber-600' },
           ].map((stat, i) => (
             <motion.div key={stat.label} custom={i} variants={fadeUp} initial="hidden" animate="show" className="card p-5">
               <div className={clsx('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 text-white shadow-sm', stat.color)}>
@@ -309,12 +336,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ═══ SYLLABUS STATS ROW (Admin System Upgrade) ═══ */}
-      {isAdmin && stats?.syllabus && (
+      {/* ═══ ADMIN: management overview (Phase-4 /v4/dashboard) ═══ */}
+      {isAdmin && dash?.stats?.totals && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-surface-700 flex items-center gap-2">
-              <BookMarked className="w-4 h-4 text-brand-600" /> Syllabus Overview
+              <BookMarked className="w-4 h-4 text-brand-600" /> {user?.role === 'super_admin' ? 'System Management' : 'Your School Overview'}
             </h2>
             <Link to="/app/admin/syllabus" className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1">
               Manage syllabus <ArrowRight className="w-3 h-3" />
@@ -322,12 +349,12 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {[
-              { icon: School,         label: 'Schools',   value: stats.syllabus.schools,   to: '/app/admin/schools',  tint: 'bg-brass-50 text-brass-700' },
-              { icon: Landmark,       label: 'Boards',    value: stats.syllabus.boards,    to: '/app/admin/syllabus', tint: 'bg-brand-50 text-brand-700' },
-              { icon: BookMarked,     label: 'Books',     value: stats.syllabus.books,     to: '/app/admin/syllabus', tint: 'bg-emerald-50 text-emerald-600' },
-              { icon: GraduationCap,  label: 'Classes',   value: stats.syllabus.classes,   to: '',                   tint: 'bg-emerald-50 text-emerald-700' },
-              { icon: Layers,         label: 'Chapters',  value: stats.syllabus.chapters,  to: '/app/admin/syllabus', tint: 'bg-brass-50 text-brass-700' },
-              { icon: FilePlus,       label: 'Exercises', value: stats.syllabus.exercises, to: '/app/admin/syllabus', tint: 'bg-amber-50 text-amber-600' },
+              { icon: School,         label: 'Schools',   value: dash.stats.totals.schools,   to: '/app/admin/schools',  tint: 'bg-brass-50 text-brass-700' },
+              { icon: Landmark,       label: 'Courses',   value: dash.stats.totals.courses,   to: '/app/admin/syllabus', tint: 'bg-brand-50 text-brand-700' },
+              { icon: BookMarked,     label: 'Books',     value: dash.stats.totals.books,     to: '/app/admin/syllabus', tint: 'bg-emerald-50 text-emerald-600' },
+              { icon: GraduationCap,  label: 'Classes',   value: dash.stats.totals.classes,   to: '',                   tint: 'bg-emerald-50 text-emerald-700' },
+              { icon: Layers,         label: 'Teachers',  value: dash.stats.totals.teachers,  to: '/app/admin/users',    tint: 'bg-brass-50 text-brass-700' },
+              { icon: FilePlus,       label: 'Papers',    value: dash.stats.totals.papers,    to: '/app/admin/papers',   tint: 'bg-amber-50 text-amber-600' },
             ].map((item) => {
               const inner = (
                 <div className="card p-4 text-center hover:shadow-md transition-all h-full">
@@ -343,36 +370,68 @@ export default function DashboardPage() {
                 : <div key={item.label}>{inner}</div>;
             })}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-            <div className="card px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                <ListTree className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <span className="text-sm font-semibold text-surface-900">{stats.syllabus.topics}</span>
-                <span className="text-sm text-surface-500 ml-1.5">topics mapped across the syllabus</span>
-              </div>
-            </div>
-            {stats.questionBreakdown && (
-              <Link to="/app/questions" className="card px-4 py-3 flex items-center gap-3 hover:shadow-md transition-all">
-                <div className={clsx(
-                  'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                  stats.questionBreakdown.pending > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-                )}>
-                  <ClipboardCheck className="w-4 h-4" />
-                </div>
-                <div className="flex-1">
-                  <span className="text-sm font-semibold text-surface-900">{stats.questionBreakdown.pending}</span>
-                  <span className="text-sm text-surface-500 ml-1.5">
-                    questions {stats.questionBreakdown.pending > 0 ? 'awaiting approval' : 'pending — all caught up'}
-                  </span>
-                </div>
-                <ArrowRight className="w-4 h-4 text-surface-300" />
-              </Link>
-            )}
-          </div>
         </motion.div>
+      )}
+
+      {/* ═══ ADMIN: teacher list + activity feed ═══ */}
+      {isAdmin && (Array.isArray(dash?.teachers) || Array.isArray(dash?.activity)) && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {Array.isArray(dash?.teachers) && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="card overflow-hidden">
+              <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
+                <h2 className="font-semibold text-surface-900">Teachers — your school</h2>
+                <Link to="/app/admin/users" className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                  Manage <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              {dash.teachers.length === 0 ? (
+                <p className="px-6 py-6 text-sm text-surface-400">No teachers yet.</p>
+              ) : (
+                <div className="divide-y divide-surface-50">
+                  {dash.teachers.map((t: any) => (
+                    <div key={t.id} className="px-6 py-3 flex items-center gap-3">
+                      <span className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 font-bold flex items-center justify-center text-sm">{(t.name ?? '?').charAt(0)}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-surface-900 truncate">{t.name}</p>
+                        <p className="text-xs text-surface-500 truncate">{t.email}</p>
+                      </div>
+                      <span className="text-[11px] font-bold text-surface-500 bg-surface-100 rounded-full px-2.5 py-1">{t.assignmentCount} subj</span>
+                      <span className="text-[11px] font-bold text-brand-700 bg-brand-50 rounded-full px-2.5 py-1">{t.paperCount} papers</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+          {Array.isArray(dash?.activity) && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }} className="card overflow-hidden">
+              <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
+                <h2 className="font-semibold text-surface-900">{user?.role === 'super_admin' ? 'Global activity' : 'School activity'}</h2>
+                {user?.role === 'super_admin' && (
+                  <Link to="/app/admin/audit" className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                    Full log <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+              </div>
+              {dash.activity.length === 0 ? (
+                <p className="px-6 py-6 text-sm text-surface-400">No activity yet.</p>
+              ) : (
+                <div className="divide-y divide-surface-50">
+                  {dash.activity.map((a: any) => (
+                    <div key={a.id} className="px-6 py-2.5 flex items-center gap-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
+                      <span className="text-xs font-mono font-bold text-surface-600 w-44 shrink-0">{a.action}</span>
+                      <span className="text-xs text-surface-500 truncate flex-1">
+                        {a.userName ?? 'system'}{a.schoolName ? ` · ${a.schoolName}` : ''}
+                      </span>
+                      <span className="text-[10px] text-surface-400">{format(new Date(a.createdAt), 'dd MMM HH:mm')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </div>
       )}
 
       {/* ═══ MAIN CONTENT GRID ═══ */}

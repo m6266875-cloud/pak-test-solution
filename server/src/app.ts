@@ -26,6 +26,9 @@ import phase2Api from './phase2/mount';
 // Phase 3 (schools / user administration / branding / templates / analytics /
 // activity log / paper PDF). Shares the Phase-2 JWT, mounted at /api/v3.
 import phase3Api from './phase3/mount';
+// Phase 4 (5-step paper wizard backend, role dashboards, catalog cleanup).
+// Shares the Phase-2 JWT, mounted at /api/v4.
+import phase4Api from './phase4/mount';
 import { createV2Governance } from './phase3/v2Governance';
 
 const app: Application = express();
@@ -100,6 +103,7 @@ app.use('/api/schools', schoolRoutes);
 app.use('/api/syllabus', syllabusRoutes);
 app.use('/api/v2', createV2Governance(), phase2Api);
 app.use('/api/v3', phase3Api);
+app.use('/api/v4', phase4Api);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

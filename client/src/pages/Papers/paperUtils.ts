@@ -1,14 +1,10 @@
 /**
- * PHASE 2 — Generator wizard shared state + pure helpers (steps 1–15).
- *
- * The wizard never loads the whole bank: catalog chains are fetched per step
- * (server-scoped for teachers) and question candidates are fetched with the
- * same filters the question-bank list endpoint understands.
+ * Shared, wizard-agnostic paper helpers (labels, type groups, MCQ option
+ * normalisation, distribution suggester). Lifted out of the retired 15-step
+ * wizard state so PaperDoc / paper detail / My Papers / Patterns and the new
+ * 5-step wizard all share one implementation.
  */
-import type {
-  BookV2, ChapterV2, ClassV2, CourseV2, Difficulty, DistributionInput, ExerciseV2,
-  Medium, PaperTypeV2, QuestionRowV2, QuestionType, SessionV2, SubjectV2, TopicV2,
-} from '../../../types';
+import type { Difficulty, DistributionInput, Medium, PaperTypeV2, QuestionType } from '../../types';
 
 // ─── labels / constants ─────────────────────────────────────────────────────
 export const TYPE_LABELS: Record<string, string> = {
@@ -44,116 +40,27 @@ export const MARK_CHIPS = [25, 50, 75, 100];
 export const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
-// ─── wizard configuration ───────────────────────────────────────────────────
+// ─── distribution rows ──────────────────────────────────────────────────────
 export interface DistributionRowUI extends DistributionInput {
   _diff: 'any' | Difficulty; // bound to the row's difficulty select
 }
 
-export interface WizardState {
-  step: number;
-  courses: CourseV2[];
-  courseId?: number;
-  sessions: SessionV2[];
-  sessionId?: number;
-  classes: ClassV2[];
-  classId?: number;
-  subjects: SubjectV2[];
-  subjectIds: number[];
-  books: BookV2[];
-  bookId?: number;
-  chapters: ChapterV2[];
-  chapterIds: number[];
-  topics: TopicV2[];
-  topicIds: number[];
-  exercises: ExerciseV2[];
-  exerciseIds: number[];
-  paperType: PaperTypeV2;
-  language: Medium;
-  totalMarks: number;
-  timeLimit: number;
-  paperCount: number;
-  title: string;
-  examTitle: string;
-  description: string;
-  distribution: DistributionRowUI[];
-  availability: Record<string, { required: number; available: number }>;
-  autoSelect: boolean;
-  manualIds: Record<string, number[]>; // type → picked question ids (pick order)
-  generating: boolean;
-  schoolName: string;
-}
+export const distSumRows = (rows: DistributionRowUI[]) => rows.reduce((a, d) => a + d.count * d.marks, 0);
 
-export const emptyWizard = (schoolName = ''): WizardState => ({
-  step: 1,
-  courses: [], sessions: [], classes: [], subjects: [], books: [],
-  chapters: [], topics: [], exercises: [],
-  subjectIds: [], chapterIds: [], topicIds: [], exerciseIds: [],
-  paperType: 'mixed', language: 'english',
-  totalMarks: 75, timeLimit: 90, paperCount: 1,
-  title: '', examTitle: '', description: '',
-  distribution: [], availability: {},
-  autoSelect: true, manualIds: {}, generating: false,
-  schoolName,
-});
-
-export const distSum = (s: WizardState) => s.distribution.reduce((a, d) => a + d.count * d.marks, 0);
-export const distCount = (s: WizardState) => s.distribution.reduce((a, d) => a + d.count, 0);
-export const requiredByType = (s: WizardState, t: string) =>
-  s.distribution.find((d) => d.type === t)?.count ?? 0;
-
-// ─── steps ──────────────────────────────────────────────────────────────────
-export interface StepDef {
-  n: number;
-  label: string;
-  short: string;
-  canLeave: (s: WizardState) => boolean;
-}
-
-export const STEPS: StepDef[] = [
-  { n: 1, label: 'Course', short: '1', canLeave: (s) => s.courseId != null },
-  { n: 2, label: 'Session', short: '2', canLeave: (s) => s.sessionId != null },
-  { n: 3, label: 'Class', short: '3', canLeave: (s) => s.classId != null },
-  { n: 4, label: 'Subject', short: '4', canLeave: (s) => s.subjectIds.length > 0 },
-  { n: 5, label: 'Book', short: '5', canLeave: () => true },
-  { n: 6, label: 'Chapters', short: '6', canLeave: (s) => s.chapterIds.length > 0 },
-  { n: 7, label: 'Topics', short: '7', canLeave: () => true },
-  { n: 8, label: 'Exercises', short: '8', canLeave: () => true },
-  { n: 9, label: 'Paper Type', short: '9', canLeave: () => true },
-  { n: 10, label: 'Language', short: '10', canLeave: () => true },
-  { n: 11, label: 'Marks & Time', short: '11', canLeave: (s) => s.totalMarks >= 1 && s.totalMarks <= 500 },
-  {
-    n: 12, label: 'Distribution', short: '12',
-    canLeave: (s) => s.distribution.some((d) => d.count > 0) && distSum(s) === s.totalMarks,
-  },
-  { n: 13, label: 'Availability', short: '13', canLeave: () => true },
-  { n: 14, label: 'Selection', short: '14', canLeave: (s) => s.autoSelect || manualPickedCount(s) > 0 },
-  { n: 15, label: 'Preview & Save', short: '15', canLeave: () => true },
-];
-
-export const manualPickedCount = (s: WizardState) =>
-  Object.values(s.manualIds).reduce((a, ids) => a + ids.length, 0);
-
-// ─── distribution templates ─────────────────────────────────────────────────
-const mk = (type: QuestionType, count: number, marks: number): DistributionRowUI => ({
-  type, count, marks, difficulty: 'any', _diff: 'any',
-});
-
-/** Deterministic suggested rows that always sum to exactly `total`.
- * Splits by fixed per-question marks (MCQ 1 / Short 2 / Long 5) and absorbs
- * the remainder into the last non-empty row's per-question marks. */
+/** Deterministic suggested rows that always sum to exactly `total`. */
 export const suggestRows = (paperType: PaperTypeV2, total: number): DistributionRowUI[] => {
   if (total <= 0) return [];
   const out: DistributionRowUI[] = [];
   const allowed = TYPE_GROUPS[paperType];
-
   const can = (t: QuestionType) => allowed.includes(t);
+  const mk = (type: QuestionType, count: number, marks: number): DistributionRowUI => ({
+    type, count, marks, difficulty: 'any', _diff: 'any',
+  });
   let rem = total;
 
   if (paperType === 'objective') {
-    // MCQs 1 mark each unless a bigger even split fits cleaner (≤ 25 Qs)
     const m = [5, 4, 2, 1].find((x) => total % x === 0 && total / x <= 25) ?? 1;
     out.push(mk('mcq', Math.ceil(total / m), m));
-    // keep Σ exact when total not divisible by m
     if (out[0].count * m !== total) out.push(mk('mcq', 0, m));
     return out.filter((d) => d.count > 0);
   }
@@ -171,7 +78,6 @@ export const suggestRows = (paperType: PaperTypeV2, total: number): Distribution
     out.push(mk('essay', Math.floor(rem / longM), longM));
     rem = rem % longM;
   }
-  // numerical / conceptual / extra types share the "long-ish" bucket
   if (rem > 0) {
     const extra: QuestionType[] = allowed.filter((t) => t !== 'mcq' && t !== 'short' && t !== 'essay');
     if (extra.length) out.push(mk(extra[0], 1, rem));
@@ -181,7 +87,7 @@ export const suggestRows = (paperType: PaperTypeV2, total: number): Distribution
       else out.push(mk('essay', 1, rem));
     } else if (can('short')) {
       const sh = out.find((d) => d.type === 'short');
-      if (sh && sh.count > 0) { sh.marks += rem; rem = 0; }
+      if (sh && sh.count > 0) { sh.marks += rem; }
       else out.push(mk('short', 1, rem));
     } else out.push(mk(allowed[0], 1, rem));
   }
@@ -220,8 +126,3 @@ export const answerLetter = (q: { options: any; answer: string | null }): string
 };
 
 export const QUESTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-// ─── question candidate pool (step 14) ─────────────────────────────────────
-export interface PoolQuestion extends QuestionRowV2 {
-  chapterNo?: number;
-}
