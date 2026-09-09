@@ -18,11 +18,27 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+/* A 401 from /auth/refresh means the session is simply gone; letting it
+ * re-enter the refresh path would loop forever. */
+const isRefreshRequest = (url?: string) => (url || '').includes('/auth/refresh');
+
+/* Only bounce to /login when actually inside the authenticated app, and at
+ * most once per 2000 ms — otherwise a stale cookie reload-loops /login and
+ * guests get bounced off the landing page. */
+let lastAuthRedirect = 0;
+const redirectToLogin = () => {
+  if (!window.location.pathname.startsWith('/app')) return;
+  const now = Date.now();
+  if (now - lastAuthRedirect < 2000) return;
+  lastAuthRedirect = now;
+  window.location.href = '/login';
+};
+
 api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && !original._retry && !isRefreshRequest(original?.url)) {
       if (isRefreshing) return new Promise((res, rej) => { failedQueue.push({ resolve: res, reject: rej }); }).then(t => { original.headers.Authorization = `Bearer ${t}`; return api(original); });
       original._retry = true;
       isRefreshing = true;
@@ -36,7 +52,7 @@ api.interceptors.response.use(
       } catch (e) {
         processQueue(e, null);
         store.dispatch(logout());
-        window.location.href = '/login';
+        redirectToLogin();
         return Promise.reject(e);
       } finally { isRefreshing = false; }
     }

@@ -233,16 +233,59 @@ function PaperSheet() {
   );
 }
 
-/* ═══ TRUSTED BY ════════════════════════════════════════════════════════ */
-function TrustedBy() {
-  const schools = ['Punjab Board', 'Federal Board', 'Sindh Board', 'KPK Board', 'Cambridge O/A Level', 'Aga Khan'];
+/* ═══ COURSES WE SUPPORT (real catalog entries) ═══════════════════════ */
+const COURSES = [
+  { code: 'ptb', name: 'Punjab Curriculum & Textbook Board (PCTB)', classes: 'Classes 1–12' },
+  { code: 'fbise', name: 'Federal Board (FBISE)', classes: 'Classes 1–12' },
+  { code: 'oup', name: 'Oxford University Press Pakistan', classes: 'Classes 1–8' },
+  { code: 'afaq', name: 'AFAQ Publishers', classes: 'Classes 1–8' },
+  { code: 'gohar', name: 'GOHAR Publishers', classes: 'Classes 1–8' },
+];
+
+function CourseTile({ course, index }: { course: (typeof COURSES)[number]; index: number }) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const monogram = course.code.slice(0, 2).toUpperCase();
   return (
-    <section className="lp-trust">
-      <div className="lp-wrap lp-trust-row">
-        <span className="lp-trust-label">Trusted across</span>
-        {schools.map((s) => (
-          <span key={s} className="lp-trust-item">{s}</span>
-        ))}
+    <motion.div
+      className="lp-course"
+      variants={fadeUp}
+      custom={index}
+      initial="hidden"
+      whileInView="show"
+      viewport={view}
+    >
+      <div className="lp-course-logo">
+        {logoFailed ? (
+          <span className="lp-course-mono" aria-hidden="true">{monogram}</span>
+        ) : (
+          <img src={`/logos/${course.code}.png`} alt="" onError={() => setLogoFailed(true)} />
+        )}
+      </div>
+      <div className="lp-course-name">{course.name}</div>
+      <span className="lp-course-classes">{course.classes}</span>
+    </motion.div>
+  );
+}
+
+function Courses() {
+  return (
+    <section id="courses" className="lp-sec lp-sec--pale">
+      <div className="lp-wrap">
+        <div className="lp-sec-head">
+          <motion.span className="lp-eyebrow" variants={fadeUp} initial="hidden" whileInView="show" viewport={view}>Boards &amp; publishers</motion.span>
+          <motion.h2 className="lp-h2" variants={fadeUp} custom={1} initial="hidden" whileInView="show" viewport={view}>
+            Courses we support.
+          </motion.h2>
+          <motion.p className="lp-lead" variants={fadeUp} custom={2} initial="hidden" whileInView="show" viewport={view}>
+            The exact courses that live in the product today — government boards and
+            private publishers you can select right from the first screen of the app.
+          </motion.p>
+        </div>
+        <div className="lp-courses-grid">
+          {COURSES.map((c, i) => (
+            <CourseTile key={c.code} course={c} index={i} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -762,8 +805,8 @@ export default function LandingPage() {
         <Nav />
         <main>
           <Hero />
-          <TrustedBy />
           <Stats />
+          <Courses />
           <HowItWorks />
           <Features />
           <Subjects />

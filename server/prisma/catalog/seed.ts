@@ -14,6 +14,12 @@
  */
 import { validateCatalogFiles, applyCatalog } from './loadCatalog';
 import { Client } from 'pg';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Auto-load server/.env so the seeder works without an exported DATABASE_URL.
+// dotenv never overwrites variables already set in the shell — shell wins.
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const VALIDATE_ONLY = process.argv.includes('--validate');
 
