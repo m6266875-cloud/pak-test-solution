@@ -4,7 +4,7 @@
  * interceptors from client.ts).
  */
 import api from './client';
-import type { CourseV2, GeneratePaperPayload } from '../types';
+import type { CourseV2, GeneratePaperPayload, PreviewPoolPayload, PreviewPoolResult } from '../types';
 
 export interface QuestionFiltersV2 {
   page?: number; limit?: number; search?: string;
@@ -78,6 +78,8 @@ export const v2 = {
       api.put(`/v2/papers/${id}/questions`, data),
     duplicate: (id: number) => api.post(`/v2/papers/${id}/duplicate`),
     remove: (id: number) => api.delete(`/v2/papers/${id}`),
+    previewPool: (payload: PreviewPoolPayload) =>
+      api.post<{ data: PreviewPoolResult }>('/v2/papers/preview-pool', payload),
   },
 
   // ─── paper patterns ───────────────────────────────────────────────────────

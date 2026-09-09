@@ -24,7 +24,7 @@
 import { forwardRef, useState } from 'react';
 import clsx from 'clsx';
 import type { PaperQuestionV2, PaperV2 } from '../../../types';
-import { optionEntries, TYPE_LABELS, TYPE_ORDER } from './state';
+import { optionEntries, TYPE_LABELS, TYPE_ORDER } from './paperUtils';
 import { courseLogoUrl } from '../../../components/common/CourseLogo';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];

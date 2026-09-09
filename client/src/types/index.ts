@@ -230,3 +230,43 @@ export interface SchoolDashboardV3 {
   counts: { teachers: number; papers: number; courses: number; classes: number; byStatus: Array<{ status: string; n: number }> };
   recentPapers: Array<{ id: number; title: string; status: string; totalMarks: number; examTitle: string | null; createdAt: string; teacherName: string; className: string; grade: number; subjects: Array<{ id: number; name: string }> | null }>;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 4 — 5-step wizard preview pool + course master (server /api/v2 + /api/v3)
+// ═══════════════════════════════════════════════════════════════════════════
+export interface PreviewPoolCandidate {
+  id: number; type: QuestionType; text: string; marks: number; options: any | null;
+  answer: string | null; difficulty: Difficulty; language: Medium;
+  chapterId: number; chapterNumber: number; chapterName: string;
+  exerciseId: number | null; exerciseNumber: number | null; exerciseName: string | null;
+}
+export interface PreviewPoolPayload {
+  chapterIds: number[]; topicIds?: number[]; exerciseIds?: number[];
+  language?: Medium; type?: string; difficulty?: string; search?: string;
+  paperType?: PaperTypeV2; distribution?: DistributionInput[]; excludeIds?: number[];
+  page?: number; limit?: number;
+}
+export interface PreviewPoolResult {
+  rows: PreviewPoolCandidate[]; total: number; page: number; limit: number;
+  countsByType: Record<string, number>;
+  suggestedIds: number[] | null; suggestedRows: PreviewPoolCandidate[];
+}
+export interface CourseAdminV3 {
+  id: number; code: string; name: string; shortName: string | null; type: string;
+  region: string | null; website: string | null; description: string | null;
+  logoUrl: string | null; status: string; displayOrder: number;
+  classCount: number; subjectCount: number; bookCount: number;
+  currentSession: { status: string; sessionId: number; code: string; name: string } | null;
+}
+export interface AcademicSessionV3 {
+  id: number; code: string; name: string; startYear: number; endYear: number;
+}
+export interface CourseDetailV3 extends CourseAdminV3 {
+  sessions: Array<{ sessionId: number; code: string; name: string; startYear: number; endYear: number; status: string; notes: string | null }>;
+  classes: Array<{ classId: number; grade: number; name: string; subjectCount: number }>;
+}
+export interface ChapterImportResultV3 {
+  bookId: number; bookTitle: string; subjectId: number;
+  chaptersCreated: number; chaptersUpdated: number;
+  exercisesCreated: number; exercisesUpdated: number;
+}

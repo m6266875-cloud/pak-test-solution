@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
-import { adminApi } from '../../api/admin';
 import { v2 } from '../../api/v2';
-import { DashboardStats, PaperSummaryV2 } from '../../types';
+import { PaperSummaryV2 } from '../../types';
+import SchoolAdminHome from './SchoolAdminHome';
+import SuperAdminHome from './SuperAdminHome';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
 import CourseLogo from '../../components/common/CourseLogo';
 import {
-  FilePlus, Files, Database, TrendingUp,
-  BookOpen, Clock, Award, Users, ArrowRight,
-  Zap, Calendar, School, Landmark, BookMarked, Layers,
-  ListTree, GraduationCap, ClipboardCheck, BookOpenCheck, Languages, Loader2,
+  FilePlus, Files, Database,
+  BookOpen, Clock, Award, ArrowRight,
+  Zap, Calendar, BookMarked,
+  BookOpenCheck, Languages, Loader2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -242,22 +243,18 @@ function TeacherHome() {
 export default function DashboardPage() {
   const { user } = useAppSelector((s) => s.auth);
   const isTeacher = user?.role === 'teacher';
-  const isAdmin = user && ['super_admin', 'school_admin'].includes(user.role);
+  const isSchoolAdmin = user?.role === 'school_admin';
+  const isSuperAdmin = user?.role === 'super_admin';
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [myPapers, setMyPapers] = useState<PaperSummaryV2[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isTeacher) { setLoading(false); return; }
     const load = async () => {
       try {
-        // v2 recent papers — teacher: own; admin: across all teachers
         const papersRes = await v2.papers.list({ limit: 8 });
         setMyPapers(papersRes.data.data as PaperSummaryV2[]);
-        if (isAdmin) {
-          const statsRes = await adminApi.getDashboard();
-          setStats(statsRes.data.data);
-        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -265,7 +262,7 @@ export default function DashboardPage() {
       }
     };
     load();
-  }, [isAdmin]);
+  }, [isTeacher]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -285,103 +282,19 @@ export default function DashboardPage() {
         />
       </motion.div>
 
-      {/* ═══ TEACHER: per-subject dashboard ═══ */}
+      {/* ═══ ROLE HOMES (Phase 4 — one dashboard per role) ═══ */}
       {isTeacher && <TeacherHome />}
+      {isSchoolAdmin && <SchoolAdminHome />}
+      {isSuperAdmin && <SuperAdminHome />}
 
-      {/* ═══ ADMIN STATS (Phase-1 endpoint; hidden when unavailable) ═══ */}
-      {isAdmin && stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { icon: Files, label: 'Total Papers', value: stats.totalPapers, sub: 'All time', color: 'from-blue-500 to-blue-600' },
-            { icon: Database, label: 'Questions', value: stats.totalQuestions.toLocaleString(), sub: 'In bank', color: 'from-brand-500 to-brand-600' },
-            { icon: Users, label: 'Active Users', value: stats.totalUsers, sub: 'Teachers & admins', color: 'from-emerald-500 to-emerald-600' },
-            { icon: TrendingUp, label: 'This Month', value: myPapers.length, sub: 'Papers generated', color: 'from-amber-500 to-amber-600' },
-          ].map((stat, i) => (
-            <motion.div key={stat.label} custom={i} variants={fadeUp} initial="hidden" animate="show" className="card p-5">
-              <div className={clsx('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 text-white shadow-sm', stat.color)}>
-                <stat.icon className="w-5 h-5" />
-              </div>
-              <div className="text-2xl font-medium text-surface-900 font-mono">{stat.value}</div>
-              <div className="text-sm font-medium text-surface-700">{stat.label}</div>
-              <div className="text-xs text-surface-400 mt-0.5">{stat.sub}</div>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* ═══ SYLLABUS STATS ROW (Admin System Upgrade) ═══ */}
-      {isAdmin && stats?.syllabus && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-surface-700 flex items-center gap-2">
-              <BookMarked className="w-4 h-4 text-brand-600" /> Syllabus Overview
-            </h2>
-            <Link to="/app/admin/syllabus" className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1">
-              Manage syllabus <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {[
-              { icon: School,         label: 'Schools',   value: stats.syllabus.schools,   to: '/app/admin/schools',  tint: 'bg-brass-50 text-brass-700' },
-              { icon: Landmark,       label: 'Boards',    value: stats.syllabus.boards,    to: '/app/admin/syllabus', tint: 'bg-brand-50 text-brand-700' },
-              { icon: BookMarked,     label: 'Books',     value: stats.syllabus.books,     to: '/app/admin/syllabus', tint: 'bg-emerald-50 text-emerald-600' },
-              { icon: GraduationCap,  label: 'Classes',   value: stats.syllabus.classes,   to: '',                   tint: 'bg-emerald-50 text-emerald-700' },
-              { icon: Layers,         label: 'Chapters',  value: stats.syllabus.chapters,  to: '/app/admin/syllabus', tint: 'bg-brass-50 text-brass-700' },
-              { icon: FilePlus,       label: 'Exercises', value: stats.syllabus.exercises, to: '/app/admin/syllabus', tint: 'bg-amber-50 text-amber-600' },
-            ].map((item) => {
-              const inner = (
-                <div className="card p-4 text-center hover:shadow-md transition-all h-full">
-                  <div className={clsx('w-9 h-9 rounded-xl mx-auto flex items-center justify-center mb-2', item.tint)}>
-                    <item.icon className="w-5 h-5" />
-                  </div>
-                  <div className="text-xl font-medium text-surface-900 font-mono">{item.value}</div>
-                  <div className="text-xs text-surface-500 font-medium">{item.label}</div>
-                </div>
-              );
-              return item.to
-                ? <Link key={item.label} to={item.to} className="block">{inner}</Link>
-                : <div key={item.label}>{inner}</div>;
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-            <div className="card px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                <ListTree className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <span className="text-sm font-semibold text-surface-900">{stats.syllabus.topics}</span>
-                <span className="text-sm text-surface-500 ml-1.5">topics mapped across the syllabus</span>
-              </div>
-            </div>
-            {stats.questionBreakdown && (
-              <Link to="/app/questions" className="card px-4 py-3 flex items-center gap-3 hover:shadow-md transition-all">
-                <div className={clsx(
-                  'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                  stats.questionBreakdown.pending > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-                )}>
-                  <ClipboardCheck className="w-4 h-4" />
-                </div>
-                <div className="flex-1">
-                  <span className="text-sm font-semibold text-surface-900">{stats.questionBreakdown.pending}</span>
-                  <span className="text-sm text-surface-500 ml-1.5">
-                    questions {stats.questionBreakdown.pending > 0 ? 'awaiting approval' : 'pending — all caught up'}
-                  </span>
-                </div>
-                <ArrowRight className="w-4 h-4 text-surface-300" />
-              </Link>
-            )}
-          </div>
-        </motion.div>
-      )}
-
-      {/* ═══ MAIN CONTENT GRID ═══ */}
+      {/* ═══ TEACHER: recent papers + shortcuts ═══ */}
+      {isTeacher && (
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Recent Papers (v2 — works for teachers and admins) */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2 card overflow-hidden">
           <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
             <h2 className="font-semibold text-surface-900">Recent Papers</h2>
-            <Link to={isAdmin ? '/app/admin/papers' : '/app/papers'} className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+            <Link to="/app/papers" className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
               View all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -413,7 +326,6 @@ export default function DashboardPage() {
                     <p className="text-xs text-surface-500 mt-0.5">
                       {paper.className}{paper.grade ? ` · Grade ${paper.grade}` : ''}
                       {paper.subjects?.length ? ` · ${paper.subjects.map((s) => s.name).join(', ')}` : ''} · {paper.totalMarks} marks
-                      {isAdmin ? ` · ${paper.teacherName}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
@@ -442,10 +354,9 @@ export default function DashboardPage() {
                 </div>
               </Link>
               <QuickAction to="/app/questions" icon={Database} label="Question Bank" desc="Browse questions" />
-              <QuickAction to={isAdmin ? '/app/admin/papers' : '/app/papers'} icon={Files} label={isAdmin ? 'Papers (All)' : 'My Papers'} desc="View all papers" />
+              <QuickAction to="/app/papers" icon={Files} label="My Papers" desc="View all papers" />
               <QuickAction to="/app/patterns" icon={BookMarked} label="Patterns" desc="Saved paper layouts" />
-              {isAdmin && <QuickAction to="/app/admin/users" icon={Users} label="Manage Users" desc="Teachers & admins" />}
-            </div>
+                          </div>
           </div>
 
           {/* Pro tip */}
@@ -457,17 +368,16 @@ export default function DashboardPage() {
               <div>
                 <h4 className="text-sm font-semibold text-brand-900 mb-1">Subject-scoped</h4>
                 <p className="text-xs text-brand-700 leading-relaxed">
-                  Every teacher account is limited to its assigned subject{isTeacher ? ' — you can only generate papers for the subject you teach' : ''}. Try signing in with a different subject teacher to see their own dashboard.
+                  Your account is limited to its assigned subject — you can only generate papers for the subject you teach. Try signing in with a different subject teacher to see their own dashboard.
                 </p>
               </div>
             </div>
           </div>
 
-          {isTeacher && (
-            <div className="card p-5">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 bg-surface-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-surface-500" />
+          <div className="card p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-100">
+                <Calendar className="h-5 w-5 text-surface-500" />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-surface-900 mb-1">Demo accounts</h4>
@@ -476,10 +386,10 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-            </div>
-          )}
+          </div>
         </motion.div>
       </div>
+      )}
     </div>
   );
 }

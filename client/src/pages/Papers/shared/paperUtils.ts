@@ -1,13 +1,12 @@
 /**
- * PHASE 2 — Generator wizard shared state + pure helpers (steps 1–15).
+ * PHASE 4 — Shared paper helpers (extracted from the Phase-2 wizard state).
  *
- * The wizard never loads the whole bank: catalog chains are fetched per step
- * (server-scoped for teachers) and question candidates are fetched with the
- * same filters the question-bank list endpoint understands.
+ * Pure display/distribution helpers used by the 5-step wizard, the paper
+ * detail page, My Papers, Patterns and the print sheet. No wizard state —
+ * that lives in ../Generate/wizard5.ts.
  */
 import type {
-  BookV2, ChapterV2, ClassV2, CourseV2, Difficulty, DistributionInput, ExerciseV2,
-  Medium, PaperTypeV2, QuestionRowV2, QuestionType, SessionV2, SubjectV2, TopicV2,
+  Difficulty, Medium, PaperTypeV2, QuestionType,
 } from '../../../types';
 
 // ─── labels / constants ─────────────────────────────────────────────────────
@@ -44,106 +43,25 @@ export const MARK_CHIPS = [25, 50, 75, 100];
 export const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
-// ─── wizard configuration ───────────────────────────────────────────────────
-export interface DistributionRowUI extends DistributionInput {
+// ─── distribution rows ──────────────────────────────────────────────────────
+export interface DistRow {
+  type: QuestionType;
+  count: number;
+  marks: number;
+  difficulty?: Difficulty | 'any';
   _diff: 'any' | Difficulty; // bound to the row's difficulty select
 }
 
-export interface WizardState {
-  step: number;
-  courses: CourseV2[];
-  courseId?: number;
-  sessions: SessionV2[];
-  sessionId?: number;
-  classes: ClassV2[];
-  classId?: number;
-  subjects: SubjectV2[];
-  subjectIds: number[];
-  books: BookV2[];
-  bookId?: number;
-  chapters: ChapterV2[];
-  chapterIds: number[];
-  topics: TopicV2[];
-  topicIds: number[];
-  exercises: ExerciseV2[];
-  exerciseIds: number[];
-  paperType: PaperTypeV2;
-  language: Medium;
-  totalMarks: number;
-  timeLimit: number;
-  paperCount: number;
-  title: string;
-  examTitle: string;
-  description: string;
-  distribution: DistributionRowUI[];
-  availability: Record<string, { required: number; available: number }>;
-  autoSelect: boolean;
-  manualIds: Record<string, number[]>; // type → picked question ids (pick order)
-  generating: boolean;
-  schoolName: string;
-}
-
-export const emptyWizard = (schoolName = ''): WizardState => ({
-  step: 1,
-  courses: [], sessions: [], classes: [], subjects: [], books: [],
-  chapters: [], topics: [], exercises: [],
-  subjectIds: [], chapterIds: [], topicIds: [], exerciseIds: [],
-  paperType: 'mixed', language: 'english',
-  totalMarks: 75, timeLimit: 90, paperCount: 1,
-  title: '', examTitle: '', description: '',
-  distribution: [], availability: {},
-  autoSelect: true, manualIds: {}, generating: false,
-  schoolName,
-});
-
-export const distSum = (s: WizardState) => s.distribution.reduce((a, d) => a + d.count * d.marks, 0);
-export const distCount = (s: WizardState) => s.distribution.reduce((a, d) => a + d.count, 0);
-export const requiredByType = (s: WizardState, t: string) =>
-  s.distribution.find((d) => d.type === t)?.count ?? 0;
-
-// ─── steps ──────────────────────────────────────────────────────────────────
-export interface StepDef {
-  n: number;
-  label: string;
-  short: string;
-  canLeave: (s: WizardState) => boolean;
-}
-
-export const STEPS: StepDef[] = [
-  { n: 1, label: 'Course', short: '1', canLeave: (s) => s.courseId != null },
-  { n: 2, label: 'Session', short: '2', canLeave: (s) => s.sessionId != null },
-  { n: 3, label: 'Class', short: '3', canLeave: (s) => s.classId != null },
-  { n: 4, label: 'Subject', short: '4', canLeave: (s) => s.subjectIds.length > 0 },
-  { n: 5, label: 'Book', short: '5', canLeave: () => true },
-  { n: 6, label: 'Chapters', short: '6', canLeave: (s) => s.chapterIds.length > 0 },
-  { n: 7, label: 'Topics', short: '7', canLeave: () => true },
-  { n: 8, label: 'Exercises', short: '8', canLeave: () => true },
-  { n: 9, label: 'Paper Type', short: '9', canLeave: () => true },
-  { n: 10, label: 'Language', short: '10', canLeave: () => true },
-  { n: 11, label: 'Marks & Time', short: '11', canLeave: (s) => s.totalMarks >= 1 && s.totalMarks <= 500 },
-  {
-    n: 12, label: 'Distribution', short: '12',
-    canLeave: (s) => s.distribution.some((d) => d.count > 0) && distSum(s) === s.totalMarks,
-  },
-  { n: 13, label: 'Availability', short: '13', canLeave: () => true },
-  { n: 14, label: 'Selection', short: '14', canLeave: (s) => s.autoSelect || manualPickedCount(s) > 0 },
-  { n: 15, label: 'Preview & Save', short: '15', canLeave: () => true },
-];
-
-export const manualPickedCount = (s: WizardState) =>
-  Object.values(s.manualIds).reduce((a, ids) => a + ids.length, 0);
-
-// ─── distribution templates ─────────────────────────────────────────────────
-const mk = (type: QuestionType, count: number, marks: number): DistributionRowUI => ({
+const mk = (type: QuestionType, count: number, marks: number): DistRow => ({
   type, count, marks, difficulty: 'any', _diff: 'any',
 });
 
 /** Deterministic suggested rows that always sum to exactly `total`.
  * Splits by fixed per-question marks (MCQ 1 / Short 2 / Long 5) and absorbs
  * the remainder into the last non-empty row's per-question marks. */
-export const suggestRows = (paperType: PaperTypeV2, total: number): DistributionRowUI[] => {
+export const suggestRows = (paperType: PaperTypeV2, total: number): DistRow[] => {
   if (total <= 0) return [];
-  const out: DistributionRowUI[] = [];
+  const out: DistRow[] = [];
   const allowed = TYPE_GROUPS[paperType];
 
   const can = (t: QuestionType) => allowed.includes(t);
@@ -220,8 +138,3 @@ export const answerLetter = (q: { options: any; answer: string | null }): string
 };
 
 export const QUESTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-// ─── question candidate pool (step 14) ─────────────────────────────────────
-export interface PoolQuestion extends QuestionRowV2 {
-  chapterNo?: number;
-}

@@ -195,6 +195,11 @@ export interface CatalogStats {
   sessions: number; courses: number; courseSessions: number; courseClasses: number;
   classes: number; subjects: number; books: number; chapters: number;
   created: { classes: number; subjects: number; books: number; chapters: number };
+  // Phase 4 — single-copy guard (Part B): active Book siblings sharing one
+  // (course, subject, class). Conflicts = same-title session/year copies that
+  // should be archived; different-title siblings are only flagged for review.
+  singleCopyConflicts: number;
+  singleCopyWarnings: string[];
 }
 
 const asInt = (rows: any[]) => (rows.length ? Number(rows[0].id) : null);
@@ -204,7 +209,7 @@ export async function applyCatalog(db: DbClient): Promise<CatalogStats> {
   if (report.errors.length) {
     throw new Error(`Catalog validation failed (${report.errors.length} errors):\n- ${report.errors.join('\n- ')}`);
   }
-  const stats: CatalogStats = { sessions: 0, courses: 0, courseSessions: 0, courseClasses: 0, classes: 0, subjects: 0, books: 0, chapters: 0, created: { classes: 0, subjects: 0, books: 0, chapters: 0 } };
+  const stats: CatalogStats = { sessions: 0, courses: 0, courseSessions: 0, courseClasses: 0, classes: 0, subjects: 0, books: 0, chapters: 0, created: { classes: 0, subjects: 0, books: 0, chapters: 0 }, singleCopyConflicts: 0, singleCopyWarnings: [] };
   const sources = loadJson<SourcesFile>('sources.json').sources;
   const sourceById = new Map(sources.map(s => [s.id, s]));
   const urlOf = (id?: string) => (id ? (sourceById.get(id)?.url ?? null) : null);
@@ -390,6 +395,30 @@ export async function applyCatalog(db: DbClient): Promise<CatalogStats> {
             );
             stats.books++;
             if (bookCreated) stats.created.books++;
+
+            // Phase 4 — single-copy guard: exactly one ACTIVE book row per
+            // (course, subject, class). Siblings left over from older sessions
+            // must be archived (see scripts/phase4-catalog-dedupe.ts), never
+            // silently multiplied. Report-only: this check never mutates.
+            const sibs = await db.query(
+              `SELECT b.id, b.title, b.edition, b.year, a.code AS session
+                 FROM "Book" b LEFT JOIN "AcademicSession" a ON a.id = b."sessionId"
+                WHERE b."courseId" = $1 AND b."subjectId" = $2 AND b."classId" = $3
+                  AND b.status = 'active' AND b.id <> $4
+                ORDER BY b.id`,
+              [courseId, subjectId, classId, bookId]
+            );
+            for (const s of sibs.rows) {
+              const sameTitle = String(s.title) === title;
+              if (sameTitle) stats.singleCopyConflicts++;
+              stats.singleCopyWarnings.push(
+                `${file}: Book#${bookId} "${title}" has an ACTIVE sibling Book#${s.id} "${s.title}"` +
+                ` (${s.edition ?? 'no edition'}${s.year ? `, ${s.year}` : ''}, session ${s.session ?? 'none'})` +
+                (sameTitle
+                  ? ' — same title: superseded session/year copy, archive it (npm run db:dedupe)'
+                  : ' — different title: multi-book subject, confirm intentional')
+              );
+            }
 
             // Chapter rows — from the (validated) chapter list of this subject.
             for (const ch of subj.chapters ?? []) {

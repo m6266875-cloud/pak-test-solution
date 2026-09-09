@@ -11,7 +11,7 @@ import DashboardLayout from './components/common/DashboardLayout';
 import LandingPage from './pages/Marketing/LandingPage';
 import LoginPage from './pages/Auth/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import GeneratePaperPage from './pages/Papers/GeneratePaperPage';
+import GeneratePaperPage5 from './pages/Papers/Generate/GeneratePaperPage5';
 import MyPapersPage from './pages/Papers/MyPapersPage';
 import PaperDetailPage from './pages/Papers/PaperDetailPage';
 import PatternsPage from './pages/Patterns/PatternsPage';
@@ -20,6 +20,7 @@ import AdminUsersPage from './pages/Admin/AdminUsersPage';
 import AdminAuditPage from './pages/Admin/AdminAuditPage';
 import AdminPapersPage from './pages/Admin/AdminPapersPage';
 import SchoolsPage from './pages/Admin/SchoolsPage';
+import CoursesPage from './pages/Admin/CoursesPage';
 import SyllabusPage from './pages/Admin/SyllabusPage';
 import TemplatesPage from './pages/Admin/TemplatesPage';
 import AnalyticsPage from './pages/Admin/AnalyticsPage';
@@ -103,7 +104,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="papers/generate" element={<GeneratePaperPage />} />
+        <Route path="papers/generate" element={<GeneratePaperPage5 />} />
         <Route path="papers" element={<MyPapersPage />} />
         <Route path="papers/:id" element={<PaperDetailPage />} />
         <Route path="questions" element={<QuestionBankPage />} />
@@ -113,6 +114,7 @@ export default function App() {
         {/* Admin only */}
         <Route path="admin/users" element={<RequirePerm perm="users"><AdminUsersPage /></RequirePerm>} />
         <Route path="admin/schools" element={<RequirePerm perm="schools"><SchoolsPage /></RequirePerm>} />
+        <Route path="admin/courses" element={<RequirePerm perm="courses"><CoursesPage /></RequirePerm>} />
         <Route path="admin/syllabus" element={<RequirePerm perm="syllabus"><SyllabusPage /></RequirePerm>} />
         <Route path="admin/templates" element={<RequirePerm perm="settings"><TemplatesPage /></RequirePerm>} />
         <Route path="admin/analytics" element={<RequirePerm perm="analytics"><AnalyticsPage /></RequirePerm>} />

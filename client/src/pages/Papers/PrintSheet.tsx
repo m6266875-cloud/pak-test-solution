@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FileDown, X } from 'lucide-react';
-import { PaperDoc } from './generate/PaperDoc';
+import { PaperDoc } from './shared/PaperDoc';
 import type { PaperV2 } from '../../types';
 
 export function PrintSheet({ paper, onClose }: { paper: PaperV2; onClose: () => void }) {

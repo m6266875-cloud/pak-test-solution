@@ -18,7 +18,10 @@
     "db:migrate:local": "node scripts/apply-migrations.js",
     "test:phase2:questions": "ts-node --transpile-only scripts/phase2-questionbank.test.ts",
     "test:phase2:generator": "ts-node --transpile-only scripts/phase2-generator.test.ts",
-    "test:phase2": "npm run test:phase2:questions && npm run test:phase2:generator"
+    "test:phase2": "npm run test:phase2:questions && npm run test:phase2:generator",
+    "db:dedupe": "ts-node --transpile-only scripts/phase4-catalog-dedupe.ts",
+    "db:retag": "ts-node --transpile-only scripts/phase4-question-retag.ts",
+    "test:phase4": "ts-node --transpile-only scripts/phase4.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.7.0",

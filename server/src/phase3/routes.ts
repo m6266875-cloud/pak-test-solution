@@ -17,6 +17,8 @@ import { schoolService, schoolSnapshot } from './schoolService';
 import { MAX_LOGO_BYTES, LOGO_CONTENT_TYPE, readLogo } from './logoStore';
 import { userAdminService } from './userAdminService';
 import { templateService } from './templateService';
+import { courseAdminService } from './courseService';
+import { syllabusAdminService } from './syllabusService';
 import { analyticsService } from './analyticsService';
 import { listLogs, distinctActions } from './audit';
 import { record } from './audit';
@@ -519,8 +521,95 @@ router.patch(
     if (!meta) throw ApiError.notFound('Paper not found');
     await canTouchPaper(user, meta);
     const updated = await paperGeneratorV2.updateMeta(user, paperId, { status });
-    await record(user, { action: status === 'archived' ? 'paper.archive' : `paper.${status}`, entity: 'Paper', entityId: paperId });
+    // Phase 4 — updateMeta already logs paper.save; keep a distinct row only for archives.
+    if (status === 'archived') await record(user, { action: 'paper.archive', entity: 'Paper', entityId: paperId });
     successResponse(res, updated, 'Paper status updated');
+  })
+);
+
+// ─── Course master (Part A: Super Admin writes; reads need `courses`) ────────
+router.get(
+  '/courses',
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    successResponse(res, await courseAdminService.list(me(req)), 'Courses fetched');
+  })
+);
+
+router.get(
+  '/courses/:id',
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    successResponse(res, await courseAdminService.get(me(req), idOf(req.params.id)), 'Course fetched');
+  })
+);
+
+router.post(
+  '/courses',
+  superOnly,
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    const created = await courseAdminService.create(me(req), req.body ?? {});
+    successResponse(res, created, 'Course created', 201);
+  })
+);
+
+router.put(
+  '/courses/:id',
+  superOnly,
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    const updated = await courseAdminService.update(me(req), idOf(req.params.id), req.body ?? {});
+    successResponse(res, updated, 'Course updated');
+  })
+);
+
+router.put(
+  '/courses/:id/sessions',
+  superOnly,
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    const updated = await courseAdminService.setSession(me(req), idOf(req.params.id), req.body ?? {});
+    successResponse(res, updated, 'Course session updated');
+  })
+);
+
+router.post(
+  '/courses/:id/classes',
+  superOnly,
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    const updated = await courseAdminService.linkClass(me(req), idOf(req.params.id), idOf(req.body?.classId));
+    successResponse(res, updated, 'Class linked to course');
+  })
+);
+
+router.delete(
+  '/courses/:id/classes/:classId',
+  superOnly,
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    const updated = await courseAdminService.unlinkClass(me(req), idOf(req.params.id), idOf(req.params.classId));
+    successResponse(res, updated, 'Class unlinked from course');
+  })
+);
+
+router.get(
+  '/sessions',
+  guardPerm('courses'),
+  wrap(async (req, res) => {
+    successResponse(res, await courseAdminService.listSessions(), 'Sessions fetched');
+  })
+);
+
+// ─── Syllabus structure import (Part B: verified books only, no invented rows)
+router.post(
+  '/syllabus/chapters/import',
+  superOnly,
+  guardPerm('syllabus'),
+  wrap(async (req, res) => {
+    const result = await syllabusAdminService.importChapters(me(req), req.body ?? {});
+    successResponse(res, result, 'Chapter structure imported');
   })
 );
 

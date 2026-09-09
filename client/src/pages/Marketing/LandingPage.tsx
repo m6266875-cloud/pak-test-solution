@@ -29,13 +29,13 @@ import Logo, { LogoMark } from '../../components/common/Logo';
 import './landing.css';
 
 /* ═══ Contact constants (paktestsolution.com) ═══════════════════════════ */
-export const WHATSAPP_NUMBER = '923404242604';
-export const WHATSAPP_DISPLAY = '0340 4242604';
+export const WHATSAPP_NUMBER = '923064172753';
+export const WHATSAPP_DISPLAY = '0306 4172753';
 export const WHATSAPP_MESSAGE =
   "Assalam-o-Alaikum! I'd like to know more about PakTest Solution's exam paper generator.";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
-export const PHONE_DISPLAY = '0309 6969640';
-export const PHONE_TEL = '+923096969640';
+export const PHONE_DISPLAY = '0306 4172753';
+export const PHONE_TEL = '+923064172753';
 export const CONTACT_EMAIL = 'info@paktestsolution.com';
 
 /* ═══ WhatsApp icon (official glyph, inline SVG) ════════════════════════ */
@@ -206,7 +206,7 @@ function Hero() {
             transition={{ duration: 0.9, delay: 0.35, ease: EASE }}
           >
             <div className="lp-hero-photo">
-              <img src="/images/hero-teacher.jpg" alt="A teacher reviewing a generated exam paper at her desk" />
+              <img src="/images/hero-teacher.jpg" alt="PakTest Solution — a teacher creating a test paper on a laptop" />
               <span className="lp-hero-photo-note">Class 9 · Mathematics · Annual 2026-27</span>
             </div>
 

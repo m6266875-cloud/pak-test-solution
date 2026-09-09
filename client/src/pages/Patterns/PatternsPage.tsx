@@ -17,7 +17,7 @@ import { useAppSelector } from '../../store/hooks';
 import { v2 } from '../../api/v2';
 import { EmptyState, PageHeader, Skeleton } from '../../components/ui';
 import type { PatternV2 } from '../../types';
-import { fmtDate, TYPE_SHORT } from '../Papers/generate/state';
+import { fmtDate, TYPE_SHORT } from '../Papers/shared/paperUtils';
 
 export default function PatternsPage() {
   const navigate = useNavigate();

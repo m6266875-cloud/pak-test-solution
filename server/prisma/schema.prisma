@@ -193,6 +193,8 @@ model User {
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  // Phase-3 module permissions for school_admin (JSON string array; see migration 20260910000001)
+  permissions   Json      @default("[]")
 
   school           School?           @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   teacherSubjects  TeacherSubject[]
@@ -553,6 +555,7 @@ model Paper {
   courseId  Int?
   sessionId Int?
   bookId    Int?
+  schoolId  Int? // Phase-3 snapshot of the generating teacher's school (see migration 20260910000001)
   paperType String     @default("mixed") // objective | subjective | mixed
   examTitle String?
 
@@ -668,6 +671,8 @@ model PaperFormatting {
   schoolLogoUrl   String?
   headerNote      String?
   footerNote      String?
+  // Phase-3 branding snapshot (watermark/header/template; see migration 20260910000001)
+  branding        Json       @default("{}")
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 

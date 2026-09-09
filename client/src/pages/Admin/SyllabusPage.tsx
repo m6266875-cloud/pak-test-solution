@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { syllabusApi } from '../../api/syllabus';
 import { subjectsApi } from '../../api/subjects';
+import { v3 } from '../../api/v3';
+import { useAppSelector } from '../../store/hooks';
 import {
   Board, Book, ClassItem, Subject, SyllabusChapter, Exercise, Topic,
   Medium, BookStatus,
@@ -10,11 +12,23 @@ import { PageHeader, Tabs, EmptyState } from '../../components/ui';
 import {
   Plus, Search, Edit3, Trash2, X, Check, Library, BookOpen, Layers,
   Landmark, GraduationCap, BookMarked, ChevronRight, FileText, ListTree,
-  RefreshCw, Link2, Globe,
+  RefreshCw, Link2, Globe, Upload,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const mediumLabel: Record<Medium, string> = { english: 'English', urdu: 'اردو', bilingual: 'Bilingual' };
+
+const IMPORT_EXAMPLE = `[
+  {
+    "number": 1,
+    "name": "Real Numbers",
+    "description": "Optional chapter note",
+    "exercises": [
+      { "number": 1, "name": "Exercise 1.1" },
+      { "number": 2, "name": "Exercise 1.2" }
+    ]
+  }
+]`;
 const bookStatusStyles: Record<BookStatus, string> = { active: 'badge-green', inactive: 'badge-gray', archived: 'badge-amber' };
 
 /* ═══ Generic small modal shell ═══ */
@@ -156,6 +170,8 @@ function BookModal({ book, boards, classes, subjects, onSave, onClose }: {
 
 /* ═══ Page ═══ */
 export default function SyllabusPage() {
+  const { user } = useAppSelector((s) => s.auth);
+  const isSuper = user?.role === 'super_admin';
   const [tab, setTab] = useState<'boards' | 'books' | 'content'>('boards');
 
   // Shared reference data
@@ -186,6 +202,10 @@ export default function SyllabusPage() {
   const [exerciseModal, setExerciseModal] = useState<{ open: boolean; exercise: Exercise | null }>({ open: false, exercise: null });
   const [topicModal, setTopicModal] = useState<{ open: boolean; topic: Topic | null }>({ open: false, topic: null });
   const [exForm, setExForm] = useState({ name: '', number: '1' });
+  // Phase-4 structure import (verified books only, exactly-what-you-paste)
+  const [importOpen, setImportOpen] = useState(false);
+  const [importJson, setImportJson] = useState('');
+  const [importing, setImporting] = useState(false);
   const [topicForm, setTopicForm] = useState({ name: '' });
   const [savingItem, setSavingItem] = useState(false);
 
@@ -245,6 +265,26 @@ export default function SyllabusPage() {
     if (ddChapterId !== '') loadChapterContent(Number(ddChapterId));
     else { setExercises([]); setTopics([]); }
   }, [ddChapterId, loadChapterContent]);
+
+  /* ── Phase-4 structure import ── */
+  const runImport = async () => {
+    if (ddBookId === '') { toast.error('Select a book in the Exercises & Topics tab first'); return; }
+    let chapters: any;
+    try {
+      chapters = JSON.parse(importJson);
+    } catch { toast.error('Invalid JSON — fix the syntax and retry'); return; }
+    if (!Array.isArray(chapters) || !chapters.length) { toast.error('The JSON must be a non-empty array of chapters'); return; }
+    setImporting(true);
+    try {
+      const r = await v3.syllabus.importChapters({ bookId: Number(ddBookId), chapters });
+      const d = r.data.data;
+      toast.success(`Imported: ${d.chaptersCreated} chapters + ${d.exercisesCreated} exercises created, ${d.chaptersUpdated} + ${d.exercisesUpdated} updated`);
+      setImportOpen(false);
+      loadChapters(Number(ddBookId));
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || 'Import failed');
+    } finally { setImporting(false); }
+  };
 
   /* ── Handlers ── */
   const handleDeleteBoard = async (board: Board) => {
@@ -308,6 +348,10 @@ export default function SyllabusPage() {
             <button onClick={() => setBoardModal({ open: true, board: null })} className="btn-primary"><Plus className="w-4 h-4" /> Add Board</button>
           ) : tab === 'books' ? (
             <button onClick={() => setBookModal({ open: true, book: null })} className="btn-primary"><Plus className="w-4 h-4" /> Add Book</button>
+          ) : isSuper ? (
+            <button onClick={() => { setImportJson(IMPORT_EXAMPLE); setImportOpen(true); }} className="btn-primary" title="Bulk-import the chapter/exercise structure for the selected book (verified books only)">
+              <Upload className="w-4 h-4" /> Import structure
+            </button>
           ) : undefined
         }
       />
@@ -599,6 +643,24 @@ export default function SyllabusPage() {
       {topicModal.open && (
         <ModalShell title={topicModal.topic ? 'Edit Topic' : 'Add Topic'} onClose={() => setTopicModal({ open: false, topic: null })} onSave={saveTopic} saving={savingItem}>
           <div><label className="label">Topic Name *</label><input className="input" value={topicForm.name} onChange={e => setTopicForm({ name: e.target.value })} placeholder="Rational numbers" /></div>
+        </ModalShell>
+      )}
+      {importOpen && (
+        <ModalShell title="Import chapter structure" onClose={() => setImportOpen(false)} onSave={runImport} saving={importing} wide>
+          <p className="text-xs text-surface-500">
+            Target book: <span className="font-semibold text-surface-800">{ddBookId === '' ? '— none selected —' : (books.find(b => b.id === ddBookId)?.title ?? `#${ddBookId}`)}</span>
+          </p>
+          <div>
+            <label className="label">Chapters JSON (array)</label>
+            <textarea className="input font-mono !text-xs" rows={12} value={importJson} onChange={e => setImportJson(e.target.value)}
+              placeholder='[{ "number": 1, "name": "…", "exercises": [{ "number": 1, "name": "…" }] }]' />
+          </div>
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-2.5 text-[11px] leading-relaxed text-amber-800">
+            <span className="font-bold">Verified-only, no invented content.</span> The book must be verified or the
+            import is rejected. Exactly the chapters/exercises pasted above are upserted (matched by number, else by
+            name) — nothing is auto-created or renumbered. New chapters land <span className="font-semibold">unverified</span> until
+            confirmed against the source. The whole import runs in one transaction and is audit-logged.
+          </div>
         </ModalShell>
       )}
     </div>
