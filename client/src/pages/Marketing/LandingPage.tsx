@@ -240,6 +240,7 @@ const COURSES = [
   { code: 'oup', name: 'Oxford University Press Pakistan', classes: 'Classes 1–8' },
   { code: 'afaq', name: 'AFAQ Publishers', classes: 'Classes 1–8' },
   { code: 'gohar', name: 'GOHAR Publishers', classes: 'Classes 1–8' },
+  { code: 'bapu', name: 'University of the Punjab — B.A. / Associate Degree', classes: 'B.A. & A.D. Programs' },
 ];
 
 function CourseTile({ course, index }: { course: (typeof COURSES)[number]; index: number }) {

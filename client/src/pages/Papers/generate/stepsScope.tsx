@@ -8,13 +8,14 @@
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
-  BookOpen, CalendarDays, CheckSquare, ChevronDown, Layers,
+  CalendarDays, CheckSquare, ChevronDown, Layers,
   ListChecks, ListTree, MonitorPlay, Shapes, BookMarked,
 } from 'lucide-react';
 import { v2 } from '../../../api/v2';
 import type { BookV2, SubjectV2 } from '../../../types';
 import type { WizardState } from './state';
 import { EmptyCard, LoadingCard, PickCard, StepHeading } from './wizUI';
+import CourseLogo from '../../../components/common/CourseLogo';
 
 export interface ScopeStepProps {
   w: WizardState;
@@ -62,7 +63,7 @@ function StepCourse({ w, set, onEnter }: ScopeStepProps) {
             }}
             title={c.name}
             sub={`${c.classCount} classes · ${c.subjectCount} subjects · ${c.bookCount} books${c.currentSession ? ` · session ${c.currentSession.code}` : ''}`}
-            icon={c.logoEnabled && c.logoUrl ? <img src={c.logoUrl} alt="" className="w-9 h-9 object-contain rounded-lg bg-white" /> : <BookOpen className="w-4.5 h-4.5" />}
+            icon={<CourseLogo code={c.code} size="md" className="rounded-xl" />}
           />
         ))}
       </div>

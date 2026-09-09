@@ -14,11 +14,18 @@
  * The same component powers the wizard step-15 preview, the paper detail
  * page and the full-screen print view. "Download PDF" = window.print() on a
  * print stylesheet whose @page setup targets A4 — no server round trip.
+ *
+ * Course branding: the paper carries its course's logo — small and centered
+ * in the printed header (like a real board paper crest) and again as a very
+ * light background watermark behind the questions (repeated on every printed
+ * page via the fixed-position print rule in global.css). Both disappear
+ * gracefully when the paper has no course code or no logo asset.
  */
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 import clsx from 'clsx';
 import type { PaperQuestionV2, PaperV2 } from '../../../types';
 import { optionEntries, TYPE_LABELS, TYPE_ORDER } from './state';
+import { courseLogoUrl } from '../../../components/common/CourseLogo';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
@@ -124,6 +131,8 @@ export const PaperDoc = forwardRef<HTMLDivElement, PaperDocProps>(({ paper, show
   const school = (paper.formatting as any)?.schoolName || '';
   const headerNote = (paper.formatting as any)?.headerNote || '';
   const examTitle = paper.examTitle || paper.title || 'Question Paper';
+  const [logoFailed, setLogoFailed] = useState(false);
+  const courseLogo = logoFailed ? null : courseLogoUrl(paper.courseCode);
 
   const sections = TYPE_ORDER
     .map((t) => ({ type: t, qs: paper.questions.filter((q) => (q.snapshotType || q.type) === t) }))
@@ -134,8 +143,15 @@ export const PaperDoc = forwardRef<HTMLDivElement, PaperDocProps>(({ paper, show
 
   return (
     <div ref={ref} dir={rtl ? 'rtl' : 'ltr'} className={clsx('paper-doc', className)}>
+      {/* course watermark — very light, behind the questions; repeats on
+          every printed page via the fixed-position @media print rule */}
+      {courseLogo && (
+        <img src={courseLogo} alt="" aria-hidden="true" className="paper-wm" onError={() => setLogoFailed(true)} />
+      )}
+      <div className="paper-doc-body">
       {/* header block */}
       <div className="paper-head">
+        {courseLogo && <img src={courseLogo} alt="" className="paper-head-logo" onError={() => setLogoFailed(true)} />}
         {school && <div className="paper-school">{school}</div>}
         <div className="paper-exam">{examTitle}</div>
         {headerNote && <div className="paper-note">{headerNote}</div>}
@@ -193,6 +209,7 @@ export const PaperDoc = forwardRef<HTMLDivElement, PaperDocProps>(({ paper, show
 
       {/* end */}
       <div className="paper-end"><span>— End of Paper —</span><span>Σ question marks: {markTotal} / paper total: {paper.totalMarks}</span></div>
+      </div>
     </div>
   );
 });

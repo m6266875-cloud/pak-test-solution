@@ -28,6 +28,7 @@ import {
   StepAvailability, StepDistribution, StepLanguage, StepMarks, StepSelection, StepType,
 } from './generate/stepsBuild';
 import { PaperDoc } from './generate/PaperDoc';
+import CourseLogo from '../../components/common/CourseLogo';
 import { PrintSheet } from './PrintSheet';
 
 export default function GeneratePaperPage() {
@@ -458,7 +459,7 @@ export default function GeneratePaperPage() {
                   </div>
                   <div className="flex items-end">
                     <p className="text-xs text-surface-400">
-                      {viewPaper.className} · {viewPaper.courseName ?? ''} · {viewPaper.medium} · {viewPaper.timeLimit ?? 90} min ·
+                      {viewPaper.className} · {viewPaper.courseCode && <CourseLogo code={viewPaper.courseCode} size="xs" style={{ verticalAlign: '-0.22em' }} />} {viewPaper.courseName ?? ''} · {viewPaper.medium} · {viewPaper.timeLimit ?? 90} min ·
                       {viewPaper.paperType} · created {fmtDate(viewPaper.createdAt)}
                     </p>
                   </div>
