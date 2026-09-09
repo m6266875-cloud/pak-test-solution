@@ -157,12 +157,11 @@
 .lp-btn--sm { padding: 9px 16px; font-size: 13px; border-radius: 10px; }
 
 .lp-btn--outline {
-  --btn-bg: transparent;
-  --btn-fg: var(--lp-green);
-  --btn-bd: var(--lp-green);
-  background: rgba(255, 255, 255, 0.65);
+  --btn-bg: var(--lp-white);
+  --btn-fg: #3f3f46;          /* zinc-700 — solid white bg keeps text legible on any section */
+  --btn-bd: #d4d4d8;          /* zinc-300 */
 }
-.lp-btn--outline:hover { background: var(--lp-white); box-shadow: 0 12px 26px -16px rgba(23, 63, 53, 0.35); }
+.lp-btn--outline:hover { background: var(--lp-white); border-color: #a1a1aa; color: var(--lp-ink); box-shadow: 0 12px 26px -16px rgba(23, 63, 53, 0.35); }
 
 .lp-btn--white {
   --btn-bg: var(--lp-white);
@@ -186,10 +185,11 @@
 }
 .lp-btn--sage:hover { background: #cfe0d7; box-shadow: 0 12px 26px -16px rgba(23, 63, 53, 0.4); }
 
-/* WhatsApp green button (reserved for WhatsApp actions) */
+/* WhatsApp green button (reserved for WhatsApp actions) — white text keeps the
+   official green readable (near-black #063a1f on #25d366 failed contrast). */
 .lp-btn--wa {
   --btn-bg: var(--lp-wa);
-  --btn-fg: #063a1f;
+  --btn-fg: #ffffff;
   --btn-bd: var(--lp-wa);
 }
 .lp-btn--wa:hover { box-shadow: 0 14px 30px -14px rgba(37, 211, 102, 0.6); background: #20bd5a; }
@@ -406,11 +406,11 @@ a:hover .lp-brand-mark { background: var(--lp-deep); }
   gap: 9px;
   font-weight: 600;
   font-size: 14px;
-  color: var(--lp-mut);
+  color: var(--lp-green);
   transition: color 0.25s ease;
   border-bottom: 1px solid transparent;
 }
-.lp-hero-wa svg { color: var(--lp-wa); width: 17px; height: 17px; }
+.lp-hero-wa svg { color: var(--lp-green); width: 17px; height: 17px; }
 .lp-hero-wa:hover { color: var(--lp-ink); border-bottom-color: var(--lp-line); }
 
 .lp-hero-proof {
@@ -556,28 +556,57 @@ a:hover .lp-brand-mark { background: var(--lp-deep); }
   .lp-chip--marks { right: -6px; }
 }
 
-/* ── trust strip ──────────────────────────────────────────────────────── */
-.lp-trust { border-top: 1px solid var(--lp-line); border-bottom: 1px solid var(--lp-line); background: var(--lp-white); padding: 30px 0; }
-.lp-trust-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 48px; }
-.lp-trust-label {
+/* ── courses we support ───────────────────────────────────────────────── */
+.lp-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1020px) { .lp-courses-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .lp-courses-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 400px) { .lp-courses-grid { grid-template-columns: 1fr; } }
+
+.lp-course {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  background: var(--lp-white);
+  border: 1px solid var(--lp-line);
+  border-radius: 20px;
+  padding: 30px 20px 24px;
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.lp-course:hover { transform: translateY(-4px); border-color: #c9d5d0; box-shadow: 0 24px 46px -28px rgba(23, 63, 53, 0.22); }
+.lp-course-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--lp-pale);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.lp-course-logo img { width: 100%; height: 100%; object-fit: contain; padding: 9px; }
+.lp-course-mono {
+  font-family: var(--lp-serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--lp-green);
+}
+.lp-course-name { font-size: 14.5px; font-weight: 600; line-height: 1.4; color: var(--lp-ink); }
+.lp-course-classes {
   font-family: var(--lp-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--lp-mut);
-  display: inline-flex; align-items: center; gap: 12px;
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+  padding: 4px 12px;
 }
-.lp-trust-label::after { content: ''; width: 34px; height: 1px; background: var(--lp-line); }
-.lp-trust-item {
-  font-family: var(--lp-sans);
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #8b9490;
-  transition: color 0.3s ease;
-}
-.lp-trust-item:hover { color: var(--lp-green); }
 
 /* ── stats ────────────────────────────────────────────────────────────── */
 .lp-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
@@ -943,7 +972,7 @@ a:hover .lp-brand-mark { background: var(--lp-deep); }
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 .lp-footer-social a:hover { background: var(--lp-green); border-color: var(--lp-green); color: #fff; transform: translateY(-2px); }
-.lp-footer-social a.wa:hover { background: var(--lp-wa); border-color: var(--lp-wa); color: #063a1f; }
+.lp-footer-social a.wa:hover { background: var(--lp-wa); border-color: var(--lp-wa); color: #ffffff; }
 .lp-footer-social svg { width: 17px; height: 17px; }
 .lp-footer h5 {
   font-family: var(--lp-mono);

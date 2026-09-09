@@ -25,6 +25,10 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
+// Auto-load server/.env so scripts work without an exported DATABASE_URL.
+// dotenv never overwrites variables already set in the shell — shell wins.
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'prisma', 'migrations');
 
 function splitStatements(sql) {

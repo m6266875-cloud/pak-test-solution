@@ -24,6 +24,8 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import path from 'path';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool, q, q1, run } from '../src/phase2/db';
@@ -35,6 +37,11 @@ import { successResponse, ApiError } from '../src/utils/apiResponse';
 import { questionBankService } from '../src/phase2/questionBankService';
 import { physicsRows, chemistryRows, biologyRows } from './demo-content';
 import type { DemoRow } from './demo-content';
+
+// Auto-load server/.env (JWT secrets, DATABASE_URL, PORT) so the gateway runs
+// with a bare `npm run dev:gateway`. Shell env still wins — dotenv never
+// overwrites already-defined variables.
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-to-a-very-long-random-secret-key-in-production';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'change-this-to-another-very-long-random-secret-key';
