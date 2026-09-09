@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { syllabusApi } from '../../api/syllabus';
 import { subjectsApi } from '../../api/subjects';
+import { v4 } from '../../api/v4';
+import { useAppSelector } from '../../store/hooks';
 import {
   Board, Book, ClassItem, Subject, SyllabusChapter, Exercise, Topic,
   Medium, BookStatus,
@@ -156,7 +158,25 @@ function BookModal({ book, boards, classes, subjects, onSave, onClose }: {
 
 /* ═══ Page ═══ */
 export default function SyllabusPage() {
+  const { user } = useAppSelector((s) => s.auth);
   const [tab, setTab] = useState<'boards' | 'books' | 'content'>('boards');
+
+  // Phase-4 Part B: single-copy syllabus cleanup (Super Admin only)
+  const [cleanup, setCleanup] = useState<any>(null);
+  const [cleanupBusy, setCleanupBusy] = useState(false);
+  const runCleanup = async (apply: boolean) => {
+    setCleanupBusy(true);
+    try {
+      const r = await v4.cleanup(apply);
+      setCleanup(r.data.data);
+      const d = r.data.data;
+      toast.success(apply
+        ? `Cleanup applied — ${d.archivedCount} duplicate book(s) archived`
+        : `Dry run — ${d.db?.archivedBookIds?.length ?? 0} duplicate book(s) would be archived, ${d.db?.orphanedQuestionIds?.length ?? 0} orphaned question(s) flagged`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? e?.message ?? 'Cleanup failed');
+    } finally { setCleanupBusy(false); }
+  };
 
   // Shared reference data
   const [boards, setBoards] = useState<Board[]>([]);
@@ -311,6 +331,32 @@ export default function SyllabusPage() {
           ) : undefined
         }
       />
+
+      {/* ═══ Phase-4 Part B: single-copy syllabus cleanup (Super Admin) ═══ */}
+      {user?.role === 'super_admin' && (
+        <div className="card p-4 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[220px]">
+            <p className="text-sm font-semibold text-surface-900">Syllabus cleanup — one current book per class/subject</p>
+            <p className="text-xs text-surface-500">
+              Archives duplicate session/year book copies (never deletes) and flags orphaned questions for review.
+              Full report: <span className="font-mono">server/prisma/catalog/cleanup-report.json</span>
+            </p>
+          </div>
+          <button onClick={() => runCleanup(false)} disabled={cleanupBusy} className="btn-ghost">
+            <RefreshCw className="w-4 h-4" /> Analyse (dry run)
+          </button>
+          {cleanup?.db?.archivedBookIds?.length > 0 && cleanup?.archivedCount == null && (
+            <button onClick={() => runCleanup(true)} disabled={cleanupBusy} className="btn-primary">
+              <Check className="w-4 h-4" /> Archive {cleanup.db.archivedBookIds.length} duplicate(s)
+            </button>
+          )}
+          {cleanup?.archivedCount != null && (
+            <span className="text-xs font-bold text-brand-700 bg-brand-50 border border-brand-200 rounded-full px-3 py-1.5">
+              Applied: {cleanup.archivedCount} book(s) archived · {cleanup.db?.orphanedQuestionIds?.length ?? 0} orphaned question(s) flagged
+            </span>
+          )}
+        </div>
+      )}
 
       <Tabs
         active={tab}

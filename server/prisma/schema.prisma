@@ -206,6 +206,11 @@ model User {
   questionsCreated Question[]        @relation("QuestionsCreated")
   questionsUpdated Question[]        @relation("QuestionsUpdated")
   paperPatterns    PaperPattern[]
+
+  // Phase 3 (synced to schema in Phase 4): module permissions for
+  // school_admin accounts (super_admin implies all; teachers have none).
+  // The raw-SQL services read/write this column directly.
+  permissions      Json?
 }
 
 // ─── School (unchanged) ──────────────────────────────────────────────────────
@@ -225,6 +230,7 @@ model School {
 
   users    User[]
   subjects Subject[]
+  papers   Paper[]
 
   @@index([status])
   @@index([city])
@@ -556,8 +562,13 @@ model Paper {
   paperType String     @default("mixed") // objective | subjective | mixed
   examTitle String?
 
+  // Phase 3 (synced to schema in Phase 4): snapshot of the generating
+  // teacher's school for school-isolated paper management.
+  schoolId  Int?
+
   teacher          User             @relation("TeacherPapers", fields: [teacherId], references: [id])
   createdBy        User             @relation("AdminCreatedPapers", fields: [createdById], references: [id])
+  school           School?          @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   class            Class            @relation(fields: [classId], references: [id])
   course           Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
   session          AcademicSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
@@ -665,11 +676,16 @@ model PaperFormatting {
   schoolName      String?
   schoolNameSize  Int        @default(16)
   schoolNameColor String     @default("#000000")
-  schoolLogoUrl   String?
+  schoolLogoUrl String?
   headerNote      String?
   footerNote      String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+
+  // Phase 3 (synced to schema in Phase 4): per-paper branding snapshot
+  // (watermark/header/footer/template) merged from school defaults.
+  branding Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
 }

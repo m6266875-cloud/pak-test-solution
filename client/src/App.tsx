@@ -11,7 +11,7 @@ import DashboardLayout from './components/common/DashboardLayout';
 import LandingPage from './pages/Marketing/LandingPage';
 import LoginPage from './pages/Auth/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import GeneratePaperPage from './pages/Papers/GeneratePaperPage';
+import Wizard5Page from './pages/Papers/wizard5/Wizard5Page';
 import MyPapersPage from './pages/Papers/MyPapersPage';
 import PaperDetailPage from './pages/Papers/PaperDetailPage';
 import PatternsPage from './pages/Patterns/PatternsPage';
@@ -103,7 +103,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="papers/generate" element={<GeneratePaperPage />} />
+        <Route path="papers/generate" element={<Wizard5Page />} />
         <Route path="papers" element={<MyPapersPage />} />
         <Route path="papers/:id" element={<PaperDetailPage />} />
         <Route path="questions" element={<QuestionBankPage />} />
